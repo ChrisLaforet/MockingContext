@@ -2,7 +2,6 @@ package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.ioc.DIContext;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,7 +31,7 @@ public class MockingContext {
         return this;
     }
 
-    public MockingContext mockContext() {
+    public MockingContext mockContext() throws Exception {
         // TODO: get the package
         context = DIContext.createContextForPackage(null);
 
@@ -42,18 +41,6 @@ public class MockingContext {
 
         // TODO: inject injectables on creation of objects
 
-    }
-
-    public static void mockContext() throws Exception {
-        DIContext context = createContext();
-    }
-
-    private static DIContext createContext() throws Exception {
-//        // snag the base package name from this main() class for scanning
-//        String rootPackageName = null;
-//        if (UnderstandingDI.class.getPackage() != null) {
-//            rootPackageName = UnderstandingDI.class.getPackage().getName();
-//        }
-        return DIContext.createContextForPackage(null);
+        return this;
     }
 }
