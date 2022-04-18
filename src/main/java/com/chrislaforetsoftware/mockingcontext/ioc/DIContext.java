@@ -25,23 +25,23 @@ public class DIContext {
         }
 
         // step 2: wire them together
-        for (Object serviceInstance : serviceInstances) {
-            for (Field field : serviceInstance.getClass().getDeclaredFields()) {
-                if (!field.isAnnotationPresent(Inject.class)) {
-                    // this field is none of our business
-                    continue;
-                }
-
-                Class<?> fieldType = field.getType();
-                field.setAccessible(true);
-                // find a suitable matching service instance
-                for (Object matchPartner : serviceInstances) {
-                    if (fieldType.isInstance(matchPartner)) {
-                        field.set(serviceInstance, matchPartner);
-                    }
-                }
-            }
-        }
+//        for (Object serviceInstance : serviceInstances) {
+//            for (Field field : serviceInstance.getClass().getDeclaredFields()) {
+//                if (!field.isAnnotationPresent(Inject.class)) {
+//                    // this field is none of our business
+//                    continue;
+//                }
+//
+//                Class<?> fieldType = field.getType();
+//                field.setAccessible(true);
+//                // find a suitable matching service instance
+//                for (Object matchPartner : serviceInstances) {
+//                    if (fieldType.isInstance(matchPartner)) {
+//                        field.set(serviceInstance, matchPartner);
+//                    }
+//                }
+//            }
+//        }
     }
 
     public static DIContext createContextForPackage(String rootPackageName) throws Exception {

@@ -5,6 +5,12 @@ import com.chrislaforetsoftware.mockingcontext.ioc.DIContext;
 import java.util.HashSet;
 import java.util.Set;
 
+
+/* to test, insert the jar into the local repository and reference it
+  from MockingContextApplicationTests pom.xml
+
+mvn install:install-file -Dfile=<path-to-file>/MockingContext.jar -DgroupId=com.chrislaforetsoftware.mockingcontext -DartifactId=MockingContext -Dversion=0.0.1-SNAPSHOT -Dpackaging=jar -DgeneratePom=true
+*/
 public class MockingContext {
 
     private static final MockingContext instance = new MockingContext();
