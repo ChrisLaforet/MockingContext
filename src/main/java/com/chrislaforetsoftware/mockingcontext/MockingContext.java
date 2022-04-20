@@ -1,22 +1,21 @@
 package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.ioc.DIContext;
+import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 
-/* to test, insert the jar into the local repository and reference it
-  from MockingContextApplicationTests pom.xml
-
-mvn install:install-file -Dfile=<path-to-file>/MockingContext.jar -DgroupId=com.chrislaforetsoftware.mockingcontext -DartifactId=MockingContext -Dversion=0.0.1-SNAPSHOT -Dpackaging=jar -DgeneratePom=true
-*/
 public class MockingContext {
 
     private static final MockingContext instance = new MockingContext();
 
     private Class<?> testClass;
     private Set<String> packagesToExplore = new HashSet<>();
+    private Map<String, Injectable> injectables = new HashMap<>();
     private DIContext context;
 
     private MockingContext() {}
@@ -30,9 +29,18 @@ public class MockingContext {
         return this;
     }
 
-    public MockingContext addPackageToExplore(Class<?> clazz) {
-        if (clazz.getPackage() != null) {
-            packagesToExplore.add(clazz.getPackage().getName());
+    public void addInjectable(Class<?> theClassToMatch, Object instance) {
+        addInjectable(theClassToMatch.getName(), instance);
+    }
+
+    public void addInjectable(String className, Object instance) {
+        Injectable injectable = new Injectable(className, instance);
+        injectables.put(injectable.getClassName(), injectable);
+    }
+
+    public MockingContext addPackageToExplore(Class<?> theClass) {
+        if (theClass.getPackage() != null) {
+            packagesToExplore.add(theClass.getPackage().getName());
         }
         return this;
     }
