@@ -46,6 +46,14 @@ public class MockingContext {
     }
 
     public MockingContext mockContext() throws Exception {
+        if (testClass == null) {
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+            if (stackTraceElements.length > 3) {
+                // caller is stackTraceElement[2]
+                setTestClass(Class.forName(stackTraceElements[2].getClassName()));
+            }
+        }
+
         // TODO: get the package
         context = DIContext.createContextForPackage(null);
 
