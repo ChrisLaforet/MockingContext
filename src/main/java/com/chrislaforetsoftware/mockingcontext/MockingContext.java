@@ -3,10 +3,8 @@ package com.chrislaforetsoftware.mockingcontext;
 import com.chrislaforetsoftware.mockingcontext.ioc.DIContext;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class MockingContext {
@@ -14,19 +12,36 @@ public class MockingContext {
     private static final MockingContext instance = new MockingContext();
 
     private Class<?> testClass;
-    private Set<String> packagesToExplore = new HashSet<>();
-    private Map<String, Injectable> injectables = new HashMap<>();
+    private final Set<String> packagesToExplore = new HashSet<>();
+    private Package testClassPackage;
+
+    private final Map<String, Injectable> injectables = new HashMap<>();
     private DIContext context;
 
     private MockingContext() {}
 
-    public static MockingContext getInstance() {
+    public static MockingContext getInstance() throws ClassNotFoundException {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        if (stackTraceElements.length > 3) {
+            // caller is stackTraceElement[2]
+            return instance.setTestClass(Class.forName(stackTraceElements[2].getClassName()));
+        }
         return instance;
     }
 
-    public MockingContext setTestClass(Class<?> testClass) {
+    private MockingContext setTestClass(Class<?> testClass) {
         this.testClass = testClass;
+        testClassPackage = testClass.getPackage();
+        addPackageToExplore(testClassPackage);
         return this;
+    }
+
+    List<String> getPackagesToExplore() {
+        return new ArrayList<>(packagesToExplore);
+    }
+
+    String getTestClassName() {
+        return this.testClass.getName();
     }
 
     public void addInjectable(Class<?> theClassToMatch, Object instance) {
@@ -38,24 +53,27 @@ public class MockingContext {
         injectables.put(injectable.getClassName(), injectable);
     }
 
+    public MockingContext addPackageToExplore(Package pkg) {
+        if (pkg != null && !pkg.getName().isEmpty()) {
+            packagesToExplore.add(pkg.getName());
+        }
+        return this;
+    }
+
     public MockingContext addPackageToExplore(Class<?> theClass) {
         if (theClass.getPackage() != null) {
-            packagesToExplore.add(theClass.getPackage().getName());
+            return addPackageToExplore(theClass.getPackage());
         }
         return this;
     }
 
     public MockingContext mockContext() throws Exception {
-        if (testClass == null) {
-            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-            if (stackTraceElements.length > 3) {
-                // caller is stackTraceElement[2]
-                setTestClass(Class.forName(stackTraceElements[2].getClassName()));
-            }
-        }
 
-        // TODO: get the package
-        context = DIContext.createContextForPackage(null);
+        // get a context
+        context = new DIContext();
+        // for each package
+
+        context = DIContext.createContextForPackage(testClassPackage.getName());
 
         // TODO: discover all of the injectables
 

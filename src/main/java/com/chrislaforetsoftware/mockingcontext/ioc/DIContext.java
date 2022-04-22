@@ -15,6 +15,8 @@ public class DIContext {
 
     private final Set<Object> serviceInstances = new HashSet<>();
 
+    // DIContext load package hierarchies, determine if any are overlapping
+
     public DIContext(Collection<Class<?>> serviceClasses) throws Exception {
         // step 1: create an instance of each service class
         for (Class<?> serviceClass : serviceClasses) {
@@ -45,10 +47,9 @@ public class DIContext {
     }
 
     public static DIContext createContextForPackage(String rootPackageName) throws Exception {
-        Set<Class<?>> allClassesInPackage = PathScanner.getAllClassesInPackage(rootPackageName);
         Set<Class<?>> serviceClasses = new HashSet<>();
-        for (Class<?> aClass : allClassesInPackage) {
-//            if (aClass.isAnnotationPresent(Service.class)) {	// only interested in our @Services!
+        for (Class<?> theClass : PathScanner.getAllClassesInPackage(rootPackageName)) {
+//            if (theClass.isAnnotationPresent(Service.class)) {	// only interested in our @Services!
 //                serviceClasses.add(aClass);
 //            }
         }
