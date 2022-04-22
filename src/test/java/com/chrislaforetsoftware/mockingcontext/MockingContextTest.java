@@ -1,6 +1,8 @@
 package com.chrislaforetsoftware.mockingcontext;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 
@@ -8,7 +10,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(MockitoJUnitRunner.class)
 public class MockingContextTest {
+
+    //@Mock
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() throws Exception {
@@ -31,6 +36,7 @@ public class MockingContextTest {
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext"));
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.match"));
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.annotation"));
+
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.ioc"));
     }
 
