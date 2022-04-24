@@ -4,6 +4,7 @@ import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -17,6 +18,14 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MockingContextTest {
+
+//    class TestInjection {
+//
+//
+//    }
+//
+//    @InjectMocks
+//    TestInjection testInjectionClass;
 
     @Mock
     IAnnotationScanner scannerA;
@@ -67,5 +76,18 @@ public class MockingContextTest {
         assertEquals(1, injectables.size());
         Injectable match = injectables.values().stream().findFirst().orElseThrow(RuntimeException::new);
         assertEquals(scannerA, match.getInstance());
+    }
+
+    @Test
+    public void givenContextInstance_whenManualAddInjectable_thenInjectablesContainsManualInstance() throws Exception {
+        MockingContext instance = MockingContext.getInstance();
+        final String injectable = "Hello world";
+        instance.addInjectable(injectable);
+
+        final Map<String, Injectable> injectables = instance.getInjectables();
+        assertEquals(1, injectables.size());
+        Injectable match = injectables.values().stream().findFirst().orElseThrow(RuntimeException::new);
+        assertEquals(injectable, match.getInstance());
+        assertEquals(injectable.getClass().getName(), match.getClassName());
     }
 }

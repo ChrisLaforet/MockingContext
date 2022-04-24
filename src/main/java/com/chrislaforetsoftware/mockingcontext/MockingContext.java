@@ -61,13 +61,18 @@ public class MockingContext {
         return this.testClass.getName();
     }
 
-    public void addInjectable(Class<?> theClassToMatch, Object instance) {
-        addInjectable(theClassToMatch.getName(), instance);
+    public MockingContext addInjectable(Class<?> theClassToMatch, Object instance) {
+        return addInjectable(theClassToMatch.getName(), instance);
     }
 
-    public void addInjectable(String className, Object instance) {
+    public MockingContext addInjectable(String className, Object instance) {
         Injectable injectable = new Injectable(className, instance);
         injectables.put(injectable.getClassName(), injectable);
+        return this;
+    }
+
+    public MockingContext addInjectable(Object instance) {
+        return addInjectable(instance.getClass(), instance);
     }
 
     public MockingContext addPackageToExplore(String packageRoot) throws Exception {
