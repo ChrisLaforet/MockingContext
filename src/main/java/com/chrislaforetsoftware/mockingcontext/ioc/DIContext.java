@@ -45,15 +45,15 @@ public class DIContext {
 //        }
     }
 
-    public static DIContext createContextForPackage(String rootPackageName) throws Exception {
-        Set<Class<?>> serviceClasses = new HashSet<>();
-        for (Class<?> theClass : PathScanner.getAllClassesInPackage(rootPackageName)) {
+//    public static DIContext createContextForPackage(String rootPackageName) throws Exception {
+//        Set<Class<?>> serviceClasses = new HashSet<>();
+//        for (Class<?> theClass : PathScanner.getAllClassesInPackage(rootPackageName)) {
 //            if (theClass.isAnnotationPresent(Service.class)) {	// only interested in our @Services!
 //                serviceClasses.add(aClass);
 //            }
-        }
-        return new DIContext(serviceClasses);
-    }
+//        }
+//        return new DIContext(serviceClasses);
+//    }
 
     @SuppressWarnings("unchecked")
     public <T> T getServiceInstance(Class<T> serviceClass) {

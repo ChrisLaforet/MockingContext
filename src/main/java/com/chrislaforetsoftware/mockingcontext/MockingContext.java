@@ -1,9 +1,12 @@
 package com.chrislaforetsoftware.mockingcontext;
 
+import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.ioc.DIContext;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.PathScanner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,15 +19,16 @@ public class MockingContext {
 
     public static final int CALLER_OFFSET = 2;
 
-
     private static final MockingContext instance = new MockingContext();
 
     private Class<?> testClass;
+
+    private Object testClassInstance;
+
     private final Set<String> packagesToExplore = new HashSet<>();
     private Package testClassPackage;
 
     private final Map<String, Injectable> injectables = new HashMap<>();
-    private DIContext context;
 
     private MockingContext() {}
 
@@ -41,6 +45,11 @@ public class MockingContext {
         this.testClass = testClass;
         testClassPackage = testClass.getPackage();
         addPackageToExplore(testClassPackage);
+        return this;
+    }
+
+    public MockingContext setTestClassInstance(Object testClassInstance) {
+        this.testClassInstance = testClassInstance;
         return this;
     }
 
@@ -86,7 +95,9 @@ public class MockingContext {
 //        context = new DIContext(packagesToExplore);
         // for each package
 
-        context = DIContext.createContextForPackage(testClassPackage.getName());
+//        context = DIContext.createContextForPackage(testClassPackage.getName());
+
+        extractSourceAnnotations();
 
         // TODO: discover all of the injectables
 
@@ -95,5 +106,54 @@ public class MockingContext {
         // TODO: inject injectables on creation of objects
 
         return this;
+    }
+
+    private void extractSourceAnnotations() throws Exception {
+        if (this.testClassInstance == null) {
+            return;
+        }
+
+        final List<IAnnotationScanner> sourceScanners = createSourceScanners();
+        for (Field field : this.testClassInstance.getClass().getDeclaredFields()) {
+            for (IAnnotationScanner scanner : sourceScanners) {
+                if (scanner.isAnnotatedAsSource(field)) {
+                    field.setAccessible(true);
+                    final Injectable injectable = new Injectable(field.getClass().getName(), field.get(this.testClassInstance));
+                    injectables.put(injectable.getClassName(), injectable);
+                    break;
+                }
+            }
+        }
+//        for (String packageName : packagesToExplore) {
+//            for (Class<?> theClass : PathScanner.getAllClassesInPackage(packageName)) {
+//                extractSourceAnnotationsFor(packageName, sourceScanners);
+//            }
+//        }
+    }
+
+    private List<IAnnotationScanner> createSourceScanners() {
+        final List<IAnnotationScanner> sourceScanners = new ArrayList<>();
+        sourceScanners.add(new MockitoAnnotationScanner());
+        return sourceScanners;
+    }
+
+//    private void extractSourceAnnotationsFor(String packageName, List<IAnnotationScanner> sourceScanners) throws Exception {
+//        for (Class<?> theClass : PathScanner.getAllClassesInPackage(packageName)) {
+//            Class<?>[] o1 = theClass.getClasses();
+//            Class<?>[] o2 = theClass.getDeclaredClasses();
+//            for (Class<?> memberClass : theClass.getDeclaredClasses()) {
+//                for (IAnnotationScanner scanner : sourceScanners) {
+//                    if (scanner.isAnnotatedAsSource(memberClass)) {
+//                        final Injectable injectable = new Injectable(memberClass.getName(), memberClass);
+//                        injectables.put(injectable.getClassName(), injectable);
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+    Map<String, Injectable> getInjectables() {
+        return this.injectables;
     }
 }
