@@ -4,13 +4,11 @@ import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,20 +33,20 @@ public class MockingContextTest {
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() throws Exception {
-        MockingContext instance = MockingContext.getInstance();
+        MockingContext instance = MockingContext.createInstance();
         assertEquals(MockingContextTest.class.getName(), instance.getTestClassName());
     }
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceInsertsPackageToExplore() throws Exception {
-        MockingContext instance = MockingContext.getInstance();
+        MockingContext instance = MockingContext.createInstance();
         assertFalse(instance.getPackagesToExplore().isEmpty());
         assertEquals(MockingContextTest.class.getPackage().getName(), instance.getPackagesToExplore().get(0));
     }
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceInsertsPackageTree() throws Exception {
-        MockingContext instance = MockingContext.getInstance();
+        MockingContext instance = MockingContext.createInstance();
         final List<String> packages = instance.getPackagesToExplore();
         assertEquals(5, packages.size());
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext"));
@@ -68,7 +66,7 @@ public class MockingContextTest {
 
     @Test
     public void givenContextInstance_whenMockContextCalled_thenInjectablesContainsMockAnnotatedClasses() throws Exception {
-        MockingContext instance = MockingContext.getInstance();
+        MockingContext instance = MockingContext.createInstance();
         instance.setTestClassInstance(this);
         instance.mockContext();
 
@@ -80,7 +78,7 @@ public class MockingContextTest {
 
     @Test
     public void givenContextInstance_whenManualAddInjectable_thenInjectablesContainsManualInstance() throws Exception {
-        MockingContext instance = MockingContext.getInstance();
+        MockingContext instance = MockingContext.createInstance();
         final String injectable = "Hello world";
         instance.addInjectable(injectable);
 

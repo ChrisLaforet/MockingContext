@@ -9,9 +9,10 @@ public class MockitoAnnotationScanner implements IAnnotationScanner {
 
     private static final String MOCK_ANNOTATION = "org.mockito.Mock";
 
+    private static final String INJECTMOCKS_ANNOTATION = "org.mockito.InjectMocks";
+
     public boolean isAnnotatedAsSource(Field field) {
         for (Annotation annotation : field.getAnnotations()) {
-            String x = annotation.annotationType().getName();
             if (annotation.annotationType().getName().equals(MOCK_ANNOTATION)) {
                 return true;
             }
@@ -20,11 +21,11 @@ public class MockitoAnnotationScanner implements IAnnotationScanner {
     }
 
     public boolean isAnnotatedAsTarget(Class<?> theClass) {
-//        for (Annotation annotation : theClass.getAnnotations()) {
-//            if (annotation.getClass().getName().equals(MOCK_ANNOTATION)) {
-//                return true;
-//            }
-//        }
+        for (Annotation annotation : theClass.getAnnotations()) {
+            if (annotation.annotationType().getName().equals(INJECTMOCKS_ANNOTATION)) {
+                return true;
+            }
+        }
         return false;
     }
 }

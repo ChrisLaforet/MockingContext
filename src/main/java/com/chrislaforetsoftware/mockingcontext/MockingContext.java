@@ -2,7 +2,6 @@ package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
-import com.chrislaforetsoftware.mockingcontext.ioc.DIContext;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.PathScanner;
 
@@ -19,7 +18,7 @@ public class MockingContext {
 
     public static final int CALLER_OFFSET = 2;
 
-    private static final MockingContext instance = new MockingContext();
+//    private static final MockingContext instance = new MockingContext();
 
     private Class<?> testClass;
 
@@ -32,7 +31,8 @@ public class MockingContext {
 
     private MockingContext() {}
 
-    public static MockingContext getInstance() throws Exception {
+    public static MockingContext createInstance() throws Exception {
+        final MockingContext instance = new MockingContext();
         StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
         if (stackTraceElements.length >= (CALLER_OFFSET + 1)) {
             // caller is stackTraceElement[2]
