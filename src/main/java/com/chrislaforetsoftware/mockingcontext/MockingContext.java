@@ -2,6 +2,7 @@ package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.ioc.DependencyInjector;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.PathScanner;
 
@@ -95,52 +96,12 @@ public class MockingContext {
     }
 
     public MockingContext mockContext() throws Exception {
-
-        // get a context
-//        context = new DIContext(packagesToExplore);
-        // for each package
-
-//        context = DIContext.createContextForPackage(testClassPackage.getName());
-
-        extractSourceAnnotations();
-
-        // TODO: discover all of the injectables
-
-        // TODO: start creating new objects and add to the injectables
-
-        // TODO: inject injectables on creation of objects
-
+        DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectables);
         return this;
     }
 
-    private void extractSourceAnnotations() throws Exception {
-        if (this.testClassInstance == null) {
-            return;
-        }
 
-        final List<IAnnotationScanner> sourceScanners = createSourceScanners();
-        for (Field field : this.testClassInstance.getClass().getDeclaredFields()) {
-            for (IAnnotationScanner scanner : sourceScanners) {
-                if (scanner.isAnnotatedAsSource(field)) {
-                    field.setAccessible(true);
-                    final Injectable injectable = new Injectable(field.getClass().getName(), field.get(this.testClassInstance));
-                    injectables.put(injectable.getClassName(), injectable);
-                    break;
-                }
-            }
-        }
-//        for (String packageName : packagesToExplore) {
-//            for (Class<?> theClass : PathScanner.getAllClassesInPackage(packageName)) {
-//                extractSourceAnnotationsFor(packageName, sourceScanners);
-//            }
-//        }
-    }
 
-    private List<IAnnotationScanner> createSourceScanners() {
-        final List<IAnnotationScanner> sourceScanners = new ArrayList<>();
-        sourceScanners.add(new MockitoAnnotationScanner());
-        return sourceScanners;
-    }
 
 //    private void extractSourceAnnotationsFor(String packageName, List<IAnnotationScanner> sourceScanners) throws Exception {
 //        for (Class<?> theClass : PathScanner.getAllClassesInPackage(packageName)) {
