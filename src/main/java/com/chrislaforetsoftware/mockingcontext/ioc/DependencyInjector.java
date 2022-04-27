@@ -16,9 +16,11 @@ public class DependencyInjector {
 
 	static class Pending {
 		private final String className;
+		private final String pkg;
 		private final Set<String> pendingDependencies = new HashSet<>();
 
-		public Pending(String className) {
+		public Pending(String pkg, String className) {
+			this.pkg = pkg;
 			this.className = className;
 		}
 
@@ -60,9 +62,10 @@ public class DependencyInjector {
 		dependencyInjector.discoverAndInject();
 	}
 
-
 	public void discoverAndInject() throws Exception {
 		extractSourceAnnotations();
+
+		discoverInjectables();
 		// TODO: discover all of the injectables
 
 		// TODO: an injectable may have to be pending awaiting its dependencies to be initialized
@@ -94,5 +97,26 @@ public class DependencyInjector {
 		//        }
 	}
 
+	private void discoverInjectables() throws Exception {
+		for (String pkg : this.packagesToExplore) {
+			for (Class<?> theClass : PathScanner.getAllClassesInPackage(pkg)) {
+				discoverInjectableTargets(theClass);
+			}
+		}
+	}
 
+	private void discoverInjectables(Class<?> theClass) {
+		for (IAnnotationScanner scanner : sourceScanners) {
+			if (scanner.isAnnotatedAsTarget(theClass)) {
+				// TODO: do something here
+//					final Injectable injectable = new Injectable(memberClass.getName(), memberClass);
+//					injectables.put(injectable.getClassName(), injectable);
+				break;
+			}
+		}
+	}
+
+	private void injectInjectables() {
+
+	}
 }
