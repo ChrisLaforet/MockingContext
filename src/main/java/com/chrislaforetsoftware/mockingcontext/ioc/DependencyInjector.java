@@ -12,34 +12,8 @@ public class DependencyInjector {
 	private final Object testClassInstance;
 
 	private final Map<String, Injectable> injectables;
+
 	private final Set<Pending> pendingInjectables = new HashSet<>();
-
-	static class Pending {
-		private final String className;
-		private final String pkg;
-		private final Set<String> pendingDependencies = new HashSet<>();
-
-		public Pending(String pkg, String className) {
-			this.pkg = pkg;
-			this.className = className;
-		}
-
-		public void addPendingDependency(String className) {
-			this.pendingDependencies.add(className);
-		}
-
-		public boolean isWaitingFor(String className) {
-			if (this.pendingDependencies.contains(className)) {
-				this.pendingDependencies.remove(className);
-				return true;
-			}
-			return false;
-		}
-
-		public boolean isPending() {
-			return !this.pendingDependencies.isEmpty();
-		}
-	}
 
 	private final List<IAnnotationScanner> sourceScanners = createSourceScanners();
 
@@ -108,12 +82,28 @@ public class DependencyInjector {
 	private void discoverInjectables(Class<?> theClass) {
 		for (IAnnotationScanner scanner : sourceScanners) {
 			if (scanner.isAnnotatedAsTarget(theClass)) {
+				attemptToInitializeInjectable(theClass);
+
 				// TODO: do something here
 //					final Injectable injectable = new Injectable(memberClass.getName(), memberClass);
 //					injectables.put(injectable.getClassName(), injectable);
 				break;
 			}
 		}
+	}
+
+	private void attemptToInitializeInjectable(Class<?> theClass) {
+		// determine if all autowired fields can be satisfied
+		// then create instance
+		// update Pending with new instance
+		// check if any pendings can now initialize
+
+		// otherwise add to Pending list
+		Pending pending = new Pending(theClass);
+		for (String neededClass : neededClasses) {
+			pending.addPendingDependency(neededClass);
+		}
+		this.pendingInjectables.add(pending);
 	}
 
 	private void injectInjectables() {
