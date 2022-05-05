@@ -2,6 +2,7 @@ package com.chrislaforetsoftware.mockingcontext.ioc;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -24,9 +25,10 @@ public class DependencyInjector {
 	}
 
 	private List<IAnnotationScanner> createSourceScanners() {
-		final List<IAnnotationScanner> sourceScanners = new ArrayList<>();
-		sourceScanners.add(new MockitoAnnotationScanner());
-		return sourceScanners;
+		final List<IAnnotationScanner> scanners = new ArrayList<>();
+		scanners.add(new MockitoAnnotationScanner());
+		scanners.add(new SpringAnnotationScanner());
+		return scanners;
 	}
 
 	public static void discoverAndInjectDependencies(Object testClassInstance,
@@ -79,7 +81,7 @@ public class DependencyInjector {
 		}
 	}
 
-	private void discoverInjectables(Class<?> theClass) {
+	private void discoverInjectableTargets(Class<?> theClass) {
 		for (IAnnotationScanner scanner : sourceScanners) {
 			if (scanner.isAnnotatedAsTarget(theClass)) {
 				attemptToInitializeInjectable(theClass);
@@ -93,14 +95,18 @@ public class DependencyInjector {
 	}
 
 	private void attemptToInitializeInjectable(Class<?> theClass) {
+		final List<String> neededClasses = ClassScanner.decomposeClass(theClass);
 		// determine if all autowired fields can be satisfied
 		// then create instance
 		// update Pending with new instance
 		// check if any pendings can now initialize
 
 		// otherwise add to Pending list
-		Pending pending = new Pending(theClass);
+		Pending pending = new Pending(theClass.getName());
+
+
 		for (String neededClass : neededClasses) {
+			// TODO: determine if the neededClass is already in hand
 			pending.addPendingDependency(neededClass);
 		}
 		this.pendingInjectables.add(pending);

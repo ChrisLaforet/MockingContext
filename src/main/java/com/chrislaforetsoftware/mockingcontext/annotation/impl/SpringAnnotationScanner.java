@@ -11,7 +11,7 @@ public class SpringAnnotationScanner implements IAnnotationScanner {
 	private static final String REPOSITORY_ANNOTATION = "org.springframework.stereotype.Repository";
 	private static final String SERVICE_ANNOTATION = "org.springframework.stereotype.Service";
 
-	private static final String AUTOWIRED_ANNOTATION = "org.springframework.beans.factory.annotation.Autowired";
+	public static final String AUTOWIRED_ANNOTATION = "org.springframework.beans.factory.annotation.Autowired";
 
 	public boolean isAnnotatedAsSource(Field field) {
 		for (Annotation annotation : field.getAnnotations()) {
