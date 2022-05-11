@@ -16,5 +16,5 @@ public interface ClassComponents {
 
 	List<Class<?>> getClasses();
 
-	Injectable instantiateClass();
+	Injectable instantiateClassWith(InjectableLookup injectableLookup);
 }

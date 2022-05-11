@@ -76,11 +76,6 @@ public class DependencyInjector {
 				}
 			}
 		}
-		//        for (String packageName : packagesToExplore) {
-		//            for (Class<?> theClass : PathScanner.getAllClassesInPackage(packageName)) {
-		//                extractSourceAnnotationsFor(packageName, sourceScanners);
-		//            }
-		//        }
 	}
 
 	private void discoverInjectables() {
@@ -96,7 +91,7 @@ public class DependencyInjector {
 			if (scanner.isAnnotatedAsTarget(theClass)) {
 				attemptToInitializeInjectable(theClass);
 
-				// TODO: do something here
+// TODO: do something here
 //					final Injectable injectable = new Injectable(memberClass.getName(), memberClass);
 //					injectables.put(injectable.getClassName(), injectable);
 				break;
@@ -119,10 +114,6 @@ public class DependencyInjector {
 
 			return;
 		}
-
-
-
-// otherwise add to Pending list
 		trackPendingInjectable(classComponents.get());
 	}
 
@@ -132,6 +123,8 @@ public class DependencyInjector {
 				return false;
 			}
 		}
+
+		injectableLookup.add(classComponents.instantiateClassWith(injectableLookup));
 
 // TODO: Inject and create and add to injectables
 		return true;

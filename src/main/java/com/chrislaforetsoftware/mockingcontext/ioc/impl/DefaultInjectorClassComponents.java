@@ -1,6 +1,9 @@
 package com.chrislaforetsoftware.mockingcontext.ioc.impl;
+import com.chrislaforetsoftware.mockingcontext.exception.ClassInstantiationFailedException;
+import com.chrislaforetsoftware.mockingcontext.exception.InjectableNotFoundException;
 import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
+import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectionPoint;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -43,7 +46,17 @@ public class DefaultInjectorClassComponents implements ClassComponents {
 	}
 
 	@Override
-	public Injectable instantiateClass() {
-		throw new NotImplementedException();
+	public Injectable instantiateClassWith(InjectableLookup injectableLookup) {
+		try {
+			Object instance = defaultConstructor.newInstance();
+			for (FieldInjectionPoint field : injectableFields) {
+				field.getField().setAccessible(true);
+				Injectable injectable = injectableLookup.find(field.getField().getType().getName()).orElseThrow(() -> new InjectableNotFoundException(field.getTheClass().getName()));
+				field.getField().set(instance, injectable.getInstance());
+			}
+			return new Injectable(instance.getClass().getName(), instance);
+		} catch (Exception ex) {
+			throw new ClassInstantiationFailedException(theClass.getName(), ex);
+		}
 	}
 }

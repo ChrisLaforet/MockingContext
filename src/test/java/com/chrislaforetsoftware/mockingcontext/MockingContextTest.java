@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -108,5 +109,16 @@ public class MockingContextTest {
         final InjectableLookup injectables = instance.getInjectableLookup();
         Injectable match = injectables.find(AnnotatedClass.class.getName()).orElseThrow(RuntimeException::new);
         assertEquals(annotatedClass, match.getInstance());
+    }
+
+    @Test
+    public void givenContextInstance_whenMockContextCalled_thenAnnotatedClassIsLocatedAndInstantiated() {
+        MockingContext instance = MockingContext.createInstance();
+        instance.setTestClassInstance(this);
+        instance.mockContext();
+
+        final InjectableLookup injectables = instance.getInjectableLookup();
+        Optional<Injectable> match = injectables.find(AnotherAnnotatedClass.class.getName());
+        assertTrue(match.isPresent());
     }
 }

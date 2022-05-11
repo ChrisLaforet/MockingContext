@@ -21,7 +21,7 @@ public class ClassScanner {
 
 	public static Optional<ClassComponents> decomposeClass(Class<?> theClass) {
 		try {
-			return decompose(theClass);
+			return ClassScanner.decompose(theClass);
 		} catch (NoSuchMethodException ex) {
 			throw new ConstructorNotFoundException(theClass.getName());
 		}
@@ -63,13 +63,10 @@ public class ClassScanner {
 		}
 
 		if (onlyHasDefaultConstructor) {
-			if (!autowiredDeclaredFields.isEmpty()) {
-				defaultConstructor.setAccessible(true);
-				final ClassComponents components = new DefaultInjectorClassComponents(theClass, defaultConstructor, autowiredDeclaredFields);
+			defaultConstructor.setAccessible(true);
+			final ClassComponents components = new DefaultInjectorClassComponents(theClass, defaultConstructor, autowiredDeclaredFields);
 
-				return Optional.of(components);
-			}
-			return Optional.empty();
+			return Optional.of(components);
 		}
 
 		if (constructors.length == 1 && constructors[0] != defaultConstructor) {

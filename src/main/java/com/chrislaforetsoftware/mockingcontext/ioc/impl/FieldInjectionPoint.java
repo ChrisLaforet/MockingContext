@@ -15,4 +15,8 @@ public class FieldInjectionPoint implements InjectionPoint {
 	public Class<?> getTheClass() {
 		return field.getType();
 	}
+
+	public Field getField() {
+		return field;
+	}
 }
