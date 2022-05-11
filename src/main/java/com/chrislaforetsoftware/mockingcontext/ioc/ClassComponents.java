@@ -4,42 +4,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
 
-public class ClassComponents {
+public interface ClassComponents {
 
-	private final Class<?> theClass;
-	private final Constructor<?> defaultConstructor;
-	private final List<Field> dependencies;
-	private Constructor<?> autowiredConstructor;
+	String getClassName();
 
-	public ClassComponents(Class<?> theClass, Constructor<?> defaultConstructor, List<Field> dependencies) {
-		this.theClass = theClass;
-		this.defaultConstructor = defaultConstructor;
-		this.dependencies = dependencies;
-	}
+	Class<?> getTheClass();
 
-	public void setAutowiredConstructor(Constructor<?> constructor, List<Field> dependencies) {
-		autowiredConstructor = constructor;
-		this.dependencies.clear();
-		this.dependencies.addAll(dependencies);
-	}
+	Constructor<?> getConstructor();
 
-	public String getClassName() {
-		return theClass.getName();
-	}
-
-	public Class<?> getTheClass() {
-		return theClass;
-	}
-
-	public Constructor<?> getDefaultConstructor() {
-		return defaultConstructor;
-	}
-
-	public Constructor<?> getAutowiredConstructor() {
-		return autowiredConstructor;
-	}
-
-	public List<Field> getDependencies() {
-		return dependencies;
-	}
+// TODO: change the behavior of getting dependencies
+	List<Field> getDependencies();
 }

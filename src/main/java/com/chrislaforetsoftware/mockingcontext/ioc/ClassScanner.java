@@ -2,22 +2,24 @@ package com.chrislaforetsoftware.mockingcontext.ioc;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.exception.InvalidComponentClassException;
+import com.chrislaforetsoftware.mockingcontext.ioc.impl.ConstructionInjectorClassComponents;
+import com.chrislaforetsoftware.mockingcontext.ioc.impl.DefaultInjectorClassComponents;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class ClassScanner {
 
-	private static final SpringAnnotationScanner springAnnotationScanner = new SpringAnnotationScanner();
-
-	public static Optional<ClassComponents> decomposeClass(Class<?> theClass, IAnnotationScanner springAnnotationScanner) throws NoSuchMethodException {
+	public static Optional<ClassComponents> decomposeClass(Class<?> theClass) throws NoSuchMethodException {
 
 		// determine if this class is eligible
-		if (!isClassAnnotatedAsComponent(theClass)) {
+		if (!ClassScanner.isClassAnnotatedAsComponent(theClass)) {
 			return Optional.empty();
 		}
 
@@ -38,56 +40,65 @@ public class ClassScanner {
 		final Field [] fields = theClass.getFields();
 		final List<Field> autowiredDeclaredFields = loadAutowiredFields(fields);
 
-		final List<Field> autowiredDeclaredFields = new ArrayList<>();
-
 		final Constructor<?> defaultConstructor = theClass.getConstructor();
 		final Constructor<?>[] constructors = theClass.getConstructors();
-		boolean isOnlyDefault = false;
+		boolean onlyHasDefaultConstructor = false;
 		if (constructors.length == 1) {
 			if (constructors[0].getParameterTypes().length == 0) {
-				isOnlyDefault = true;
+				onlyHasDefaultConstructor = true;
 			}
 		} else if (constructors.length == 0) {
-			isOnlyDefault = true;
+			onlyHasDefaultConstructor = true;
 		}
 
-		if (isOnlyDefault) {
+		if (onlyHasDefaultConstructor) {
 			if (!autowiredDeclaredFields.isEmpty()) {
 				defaultConstructor.setAccessible(true);
-				final ClassComponents components = new ClassComponents(theClass, defaultConstructor, autowiredDeclaredFields);
+				final ClassComponents components = new DefaultInjectorClassComponents(theClass, defaultConstructor, autowiredDeclaredFields);
 
 				return Optional.of(components);
 			}
 			return Optional.empty();
 		}
 
-		Constructor<?> autowiredConstructor = null;
 		if (constructors.length == 1 && constructors[0] != defaultConstructor) {
-			for (Constructor<?> constructor : constructors) {
-				if (constructor == defaultConstructor) {
-					continue;
-				}
-
-				final Annotation[] annotations = constructor.getAnnotations();
-
-				if (constructor.getParameterTypes())
-			}
+			return Optional.of(
+					new ConstructionInjectorClassComponents(theClass,
+						constructors[0],
+						Arrays.asList(constructors[0].getParameterTypes())));
 		}
 
-
-		return new ClassComponents(theClass, defaultConstructor, autowiredDeclaredFields);
-
-
-		return dependencies;
+		throw new InvalidComponentClassException(theClass.getName(), "Invalid number of DI constructors");
 	}
 
 	private static List<Field> loadAutowiredFields(Field [] fields) {
 		final List<Field> autowiredFields = new ArrayList<>();
+		Arrays.asList(fields).forEach(field -> {
+			if (ClassScanner.isAnnotatedAsAutowired(field)) {
+				autowiredFields.add(field);
+			}
+		});
 
 		return autowiredFields;
 	}
 
-	private static boolean isClassAnnotatedAsComponent(Class<?> theClass) {
-		return springAnnotationScanner.isAnnotatedAsTarget(theClass);
+	private static boolean isAnnotatedAsAutowired(Field field) {
+		for (Annotation annotation : field.getAnnotations()) {
+			if (annotation.annotationType().getName().equals(SpringAnnotationScanner.AUTOWIRED_ANNOTATION)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static boolean isClassAnnotatedAsComponent(Class<?> theClass) {
+		for (Annotation annotation : theClass.getAnnotations()) {
+			if (annotation.annotationType().getName().equals(SpringAnnotationScanner.COMPONENT_ANNOTATION) ||
+					annotation.annotationType().getName().equals(SpringAnnotationScanner.REPOSITORY_ANNOTATION) ||
+					annotation.annotationType().getName().equals(SpringAnnotationScanner.SERVICE_ANNOTATION)) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
