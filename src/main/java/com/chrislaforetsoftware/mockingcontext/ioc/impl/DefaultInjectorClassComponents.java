@@ -1,6 +1,8 @@
 package com.chrislaforetsoftware.mockingcontext.ioc.impl;
 import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
+import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectionPoint;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -11,7 +13,7 @@ public class DefaultInjectorClassComponents implements ClassComponents {
 
 	private final Class<?> theClass;
 	private final Constructor<?> defaultConstructor;
-	private final List<InjectionPoint> injectableFields;
+	private final List<FieldInjectionPoint> injectableFields;
 
 	public DefaultInjectorClassComponents(Class<?> theClass, Constructor<?> defaultConstructor, List<Field> dependencies) {
 		this.theClass = theClass;
@@ -31,7 +33,17 @@ public class DefaultInjectorClassComponents implements ClassComponents {
 		return defaultConstructor;
 	}
 
-	public List<InjectionPoint> getInjectionPoints() {
+	public List<? extends InjectionPoint> getInjectionPoints() {
 		return injectableFields;
+	}
+
+	@Override
+	public List<Class<?>> getClasses() {
+		return injectableFields.stream().map(FieldInjectionPoint::getTheClass).collect(Collectors.toList());
+	}
+
+	@Override
+	public Injectable instantiateClass() {
+		throw new NotImplementedException();
 	}
 }

@@ -2,6 +2,9 @@ package com.chrislaforetsoftware.mockingcontext.ioc;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.annotation.mockingcontext.MockingContextAutowired;
+import com.chrislaforetsoftware.mockingcontext.annotation.mockingcontext.MockingContextComponent;
+import com.chrislaforetsoftware.mockingcontext.exception.ConstructorNotFoundException;
 import com.chrislaforetsoftware.mockingcontext.exception.InvalidComponentClassException;
 import com.chrislaforetsoftware.mockingcontext.ioc.impl.ConstructionInjectorClassComponents;
 import com.chrislaforetsoftware.mockingcontext.ioc.impl.DefaultInjectorClassComponents;
@@ -16,7 +19,15 @@ import java.util.Optional;
 
 public class ClassScanner {
 
-	public static Optional<ClassComponents> decomposeClass(Class<?> theClass) throws NoSuchMethodException {
+	public static Optional<ClassComponents> decomposeClass(Class<?> theClass) {
+		try {
+			return decompose(theClass);
+		} catch (NoSuchMethodException ex) {
+			throw new ConstructorNotFoundException(theClass.getName());
+		}
+	}
+
+	private static Optional<ClassComponents> decompose(Class<?> theClass) throws NoSuchMethodException {
 
 		// determine if this class is eligible
 		if (!ClassScanner.isClassAnnotatedAsComponent(theClass)) {
@@ -84,7 +95,8 @@ public class ClassScanner {
 
 	private static boolean isAnnotatedAsAutowired(Field field) {
 		for (Annotation annotation : field.getAnnotations()) {
-			if (annotation.annotationType().getName().equals(SpringAnnotationScanner.AUTOWIRED_ANNOTATION)) {
+			if (annotation.annotationType().getName().equals(SpringAnnotationScanner.AUTOWIRED_ANNOTATION) ||
+					annotation.annotationType().isAssignableFrom(MockingContextAutowired.class)) {
 				return true;
 			}
 		}
@@ -95,7 +107,8 @@ public class ClassScanner {
 		for (Annotation annotation : theClass.getAnnotations()) {
 			if (annotation.annotationType().getName().equals(SpringAnnotationScanner.COMPONENT_ANNOTATION) ||
 					annotation.annotationType().getName().equals(SpringAnnotationScanner.REPOSITORY_ANNOTATION) ||
-					annotation.annotationType().getName().equals(SpringAnnotationScanner.SERVICE_ANNOTATION)) {
+					annotation.annotationType().getName().equals(SpringAnnotationScanner.SERVICE_ANNOTATION) ||
+					annotation.annotationType().isAssignableFrom(MockingContextComponent.class)) {
 				return true;
 			}
 		}

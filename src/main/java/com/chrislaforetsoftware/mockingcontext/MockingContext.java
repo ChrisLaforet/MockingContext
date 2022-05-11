@@ -4,6 +4,7 @@ import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.ioc.DependencyInjector;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
+import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.ioc.PathScanner;
 
 import java.lang.reflect.Field;
@@ -28,7 +29,7 @@ public class MockingContext {
     private final Set<String> packagesToExplore = new HashSet<>();
     private Package testClassPackage;
 
-    private final Map<String, Injectable> injectables = new HashMap<>();
+    private final InjectableLookup injectableLookup = new InjectableLookup();
 
     private MockingContext() {}
 
@@ -62,13 +63,16 @@ public class MockingContext {
         return this.testClass.getName();
     }
 
+    InjectableLookup getInjectableLookup() {
+        return injectableLookup;
+    }
+
     public MockingContext addInjectable(Class<?> theClassToMatch, Object instance) {
         return addInjectable(theClassToMatch.getName(), instance);
     }
 
     public MockingContext addInjectable(String className, Object instance) {
-        Injectable injectable = new Injectable(className, instance);
-        injectables.put(injectable.getClassName(), injectable);
+        injectableLookup.add(new Injectable(className, instance));
         return this;
     }
 
@@ -96,7 +100,7 @@ public class MockingContext {
     }
 
     public MockingContext mockContext() throws Exception {
-        DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectables);
+        DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectableLookup);
         return this;
     }
 
@@ -118,8 +122,4 @@ public class MockingContext {
 //            }
 //        }
 //    }
-
-    Map<String, Injectable> getInjectables() {
-        return this.injectables;
-    }
 }

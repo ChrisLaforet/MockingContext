@@ -12,5 +12,9 @@ public interface ClassComponents {
 
 	Constructor<?> getConstructor();
 
-	List<InjectionPoint> getInjectionPoints();
+	List<? extends InjectionPoint> getInjectionPoints();
+
+	List<Class<?>> getClasses();
+
+	Injectable instantiateClass();
 }
