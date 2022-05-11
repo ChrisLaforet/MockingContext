@@ -12,6 +12,5 @@ public interface ClassComponents {
 
 	Constructor<?> getConstructor();
 
-// TODO: change the behavior of getting dependencies
-	List<Field> getDependencies();
+	List<InjectionPoint> getInjectionPoints();
 }

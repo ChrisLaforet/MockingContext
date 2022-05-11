@@ -1,21 +1,22 @@
 package com.chrislaforetsoftware.mockingcontext.ioc.impl;
+
 import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
+import com.chrislaforetsoftware.mockingcontext.ioc.InjectionPoint;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConstructionInjectorClassComponents implements ClassComponents {
 
 	private final Class<?> theClass;
 	private final Constructor<?> defaultConstructor;
-	private final List<Class<?>> parameters;
+	private final List<InjectionPoint> parameters;
 
 	public ConstructionInjectorClassComponents(Class<?> theClass, Constructor<?> defaultConstructor, List<Class<?>> parameters) {
 		this.theClass = theClass;
 		this.defaultConstructor = defaultConstructor;
-		this.parameters = parameters;
+		this.parameters = parameters.stream().map(ParameterInjectionPoint::new).collect(Collectors.toList());
 	}
 
 	public String getClassName() {
@@ -30,8 +31,7 @@ public class ConstructionInjectorClassComponents implements ClassComponents {
 		return defaultConstructor;
 	}
 
-	public List<Field> getDependencies() {
-		return new ArrayList<>();
-		// TODO: change the behavior of getting dependencies
+	public List<InjectionPoint> getInjectionPoints() {
+		return parameters;
 	}
 }
