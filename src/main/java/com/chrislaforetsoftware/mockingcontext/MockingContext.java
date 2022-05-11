@@ -16,13 +16,13 @@ public class MockingContext {
 
     public static final int CALLER_OFFSET = 2;
 
-//    private static final MockingContext instance = new MockingContext();
-
     private Class<?> testClass;
 
     private Object testClassInstance;
 
     private final Set<String> packagesToExplore = new HashSet<>();
+
+    @SuppressWarnings("FieldCanBeLocal")
     private Package testClassPackage;
 
     private final InjectableLookup injectableLookup = new InjectableLookup();
@@ -51,6 +51,7 @@ public class MockingContext {
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public MockingContext setTestClassInstance(Object testClassInstance) {
         this.testClassInstance = testClassInstance;
         return this;
@@ -65,7 +66,7 @@ public class MockingContext {
     }
 
     InjectableLookup getInjectableLookup() {
-        return injectableLookup;
+        return this.injectableLookup;
     }
 
     public MockingContext addInjectable(Class<?> theClassToMatch, Object instance) {
@@ -77,10 +78,12 @@ public class MockingContext {
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public MockingContext addInjectable(Object instance) {
         return addInjectable(instance.getClass(), instance);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public MockingContext addPackageToExplore(String packageRoot) throws Exception {
         packagesToExplore.addAll(PathScanner.getAllPackages(packageRoot));
         return this;
@@ -100,27 +103,9 @@ public class MockingContext {
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public MockingContext mockContext() {
         DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectableLookup);
         return this;
     }
-
-
-
-
-//    private void extractSourceAnnotationsFor(String packageName, List<IAnnotationScanner> sourceScanners) throws Exception {
-//        for (Class<?> theClass : PathScanner.getAllClassesInPackage(packageName)) {
-//            Class<?>[] o1 = theClass.getClasses();
-//            Class<?>[] o2 = theClass.getDeclaredClasses();
-//            for (Class<?> memberClass : theClass.getDeclaredClasses()) {
-//                for (IAnnotationScanner scanner : sourceScanners) {
-//                    if (scanner.isAnnotatedAsSource(memberClass)) {
-//                        final Injectable injectable = new Injectable(memberClass.getName(), memberClass);
-//                        injectables.put(injectable.getClassName(), injectable);
-//                        break;
-//                    }
-//                }
-//            }
-//        }
-//    }
 }

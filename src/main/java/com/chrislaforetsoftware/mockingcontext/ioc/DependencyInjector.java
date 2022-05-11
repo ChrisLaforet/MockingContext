@@ -4,14 +4,17 @@ import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockingContextAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
 import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DependencyInjector {
 
@@ -49,13 +52,7 @@ public class DependencyInjector {
 		extractSourceAnnotations();
 
 		discoverInjectables();
-		// TODO: discover all of the injectables
-
-		// TODO: an injectable may have to be pending awaiting its dependencies to be initialized
-
-		// TODO: start creating new objects and add to the injectables
-
-		// TODO: inject injectables on creation of objects
+		injectPendingInjectables();
 	}
 
 	private void extractSourceAnnotations() {
@@ -86,59 +83,66 @@ public class DependencyInjector {
 		}
 	}
 
+	private void injectPendingInjectables() {
+		while (!pendingInjectables.isEmpty()) {
+			int remaining = pendingInjectables.size();
+			attemptToInitializePendingInjectables();
+			if (pendingInjectables.size() == remaining) {
+				throw new CannotInstantiateClassException(pendingInjectables.stream().map(Pending::getClassName).collect(Collectors.joining(", ")));
+			}
+		}
+	}
+
 	private void discoverInjectableTargets(Class<?> theClass) {
 		for (IAnnotationScanner scanner : sourceScanners) {
 			if (scanner.isAnnotatedAsTarget(theClass)) {
-				attemptToInitializeInjectable(theClass);
-
-// TODO: do something here
-//					final Injectable injectable = new Injectable(memberClass.getName(), memberClass);
-//					injectables.put(injectable.getClassName(), injectable);
+				if (attemptToInitializeInjectable(theClass)) {
+					attemptToInitializePendingInjectables();
+				}
 				break;
 			}
 		}
 	}
 
-	private void attemptToInitializeInjectable(Class<?> theClass) {
+	private boolean attemptToInitializeInjectable(Class<?> theClass) {
 		final Optional<ClassComponents> classComponents = ClassScanner.decomposeClass(theClass);
 		if (!classComponents.isPresent()) {
-			return;
+			return false;
 		}
 
-		// determine if all autowired fields can be satisfied
-		// then create instance
-		// update Pending with new instance
-		if (createPendingInjectable(classComponents.get())) {
-
-			// check if any pendings can now initialize
-
-			return;
+		if (createInjectedInstance(classComponents.get())) {
+			return true;
 		}
 		trackPendingInjectable(classComponents.get());
+		return false;
 	}
 
-	private boolean createPendingInjectable(ClassComponents classComponents) {
+	private void attemptToInitializePendingInjectables() {
+		pendingInjectables.removeIf(pending -> !pending.isPending() && attemptToInitializePendingInjectable(pending));
+	}
+
+	private boolean attemptToInitializePendingInjectable(Pending pending) {
+		return createInjectedInstance(pending.getClassComponents());
+	}
+
+	private boolean createInjectedInstance(ClassComponents classComponents) {
 		for (Class<?> neededClass: classComponents.getClasses()) {
 			if (!injectableLookup.find(neededClass.getName()).isPresent()) {
 				return false;
 			}
 		}
-
 		injectableLookup.add(classComponents.instantiateClassWith(injectableLookup));
 
-// TODO: Inject and create and add to injectables
+		this.pendingInjectables.forEach(pending ->
+				pending.checkAndCancelWaitingFor(classComponents.getClass().getName()));
 		return true;
 	}
 
 	private void trackPendingInjectable(ClassComponents classComponents) {
-		Pending pending = new Pending(classComponents.getTheClass().getName());
+		Pending pending = new Pending(classComponents);
 		for (Class<?> neededClass: classComponents.getClasses()) {
 			pending.addPendingDependency(neededClass.getName());
 		}
 		this.pendingInjectables.add(pending);
-	}
-
-	private void injectInjectables() {
-
 	}
 }

@@ -51,15 +51,17 @@ public class ClassScanner {
 		final Field [] fields = theClass.getFields();
 		final List<Field> autowiredDeclaredFields = loadAutowiredFields(fields);
 
-		final Constructor<?> defaultConstructor = theClass.getConstructor();
+		final Constructor<?> defaultConstructor = getDefaultConstructorFor(theClass);
 		final Constructor<?>[] constructors = theClass.getConstructors();
 		boolean onlyHasDefaultConstructor = false;
-		if (constructors.length == 1) {
-			if (constructors[0].getParameterTypes().length == 0) {
+		if (defaultConstructor != null) {
+			if (constructors.length == 1) {
+				if (constructors[0].getParameterTypes().length == 0) {
+					onlyHasDefaultConstructor = true;
+				}
+			} else if (constructors.length == 0) {
 				onlyHasDefaultConstructor = true;
 			}
-		} else if (constructors.length == 0) {
-			onlyHasDefaultConstructor = true;
 		}
 
 		if (onlyHasDefaultConstructor) {
@@ -77,6 +79,14 @@ public class ClassScanner {
 		}
 
 		throw new InvalidComponentClassException(theClass.getName(), "Invalid number of DI constructors");
+	}
+
+	private static Constructor<?> getDefaultConstructorFor(Class<?> theClass) {
+		try {
+			return theClass.getConstructor();
+		} catch (Exception ex) {
+			return null;
+		}
 	}
 
 	private static List<Field> loadAutowiredFields(Field [] fields) {

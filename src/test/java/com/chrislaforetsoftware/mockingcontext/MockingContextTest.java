@@ -1,7 +1,7 @@
 package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
-import com.chrislaforetsoftware.mockingcontext.annotation.mockingcontext.MockingContextAutowired;
+import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import org.junit.Test;
@@ -14,31 +14,26 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MockingContextTest {
 
-//    class TestInjection {
-//
-//
-//    }
-//
-//    @InjectMocks
-//    TestInjection testInjectionClass;
-
     /** Testing ToDo List ****
      *
-     * annotate class with MockingContextComponent should be found
-     * --MockingContext createInstance throws RuntimeException
+     * --annotate class with MockingContextComponent should be found
+     * -- Find a mocking class with constructor autowiring
+     * -- Create instance of mocked class with constructor autowiring
+     * -- Circle around until all mocked classes are instantiated
+     * -- Throw exception if all mocked classes cannot be instantiated
      *
      ***********/
 
     @Mock
     IAnnotationScanner mockScanner;
 
-    @MockingContextAutowired
-    AnnotatedClass annotatedClass;
+    AnnotatedClass annotatedClass = new AnnotatedClass();
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() {
@@ -78,13 +73,19 @@ public class MockingContextTest {
 
     @Test
     public void givenContextInstance_whenMockContextCalled_thenInjectablesContainsMockAnnotatedClasses() throws Exception {
-        MockingContext instance = MockingContext.createInstance();
-        instance.setTestClassInstance(this);
-        instance.mockContext();
+        MockingContext instance = prepareFullMockingContext();
 
         final InjectableLookup injectables = instance.getInjectableLookup();
         Injectable match = injectables.find(IAnnotationScanner.class.getName()).orElseThrow(RuntimeException::new);
         assertEquals(mockScanner, match.getInstance());
+    }
+
+    private MockingContext prepareFullMockingContext() {
+        MockingContext instance = MockingContext.createInstance();
+        instance.setTestClassInstance(this);
+        instance.addInjectable(this.annotatedClass);
+        instance.mockContext();
+        return instance;
     }
 
     @Test
@@ -102,23 +103,39 @@ public class MockingContextTest {
 
     @Test
     public void givenContextInstance_whenMockContextCalled_thenInjectablesContainMockingContextAutowiredClasses() {
-        MockingContext instance = MockingContext.createInstance();
-        instance.setTestClassInstance(this);
-        instance.mockContext();
+        MockingContext instance = prepareFullMockingContext();
 
         final InjectableLookup injectables = instance.getInjectableLookup();
         Injectable match = injectables.find(AnnotatedClass.class.getName()).orElseThrow(RuntimeException::new);
-        assertEquals(annotatedClass, match.getInstance());
+        assertNotEquals(annotatedClass, match.getInstance());
     }
 
     @Test
-    public void givenContextInstance_whenMockContextCalled_thenAnnotatedClassIsLocatedAndInstantiated() {
-        MockingContext instance = MockingContext.createInstance();
-        instance.setTestClassInstance(this);
-        instance.mockContext();
+    public void givenContextInstanceWithDefaultConstructorAnnotatedClass_whenMockContextCalled_thenAnnotatedClassIsLocatedAndInstantiated() {
+        MockingContext instance = prepareFullMockingContext();
 
         final InjectableLookup injectables = instance.getInjectableLookup();
         Optional<Injectable> match = injectables.find(AnotherAnnotatedClass.class.getName());
         assertTrue(match.isPresent());
+    }
+
+    @Test
+    public void givenContextInstanceWithConstructorAutowiringAnnotatedClass_whenMockContextCalled_thenAnnotatedClassIsLocatedAndInstantiated() {
+        MockingContext instance = prepareFullMockingContext();
+
+        final InjectableLookup injectables = instance.getInjectableLookup();
+        Optional<Injectable> match = injectables.find(YetAnotherAnnotatedClass.class.getName());
+        assertTrue(match.isPresent());
+        final YetAnotherAnnotatedClass injectedClass = (YetAnotherAnnotatedClass)match.get().getInstance();
+        assertEquals(mockScanner, injectedClass.getMockScanner());
+        assertEquals(annotatedClass, injectedClass.getAnnotatedClass());
+    }
+
+    @Test(expected = CannotInstantiateClassException.class)
+    public void givenContextInstanceWithMissingInjectables_whenMockContextCalled_thenThrowsCannotInstantiateClassException() {
+        MockingContext instance = MockingContext.createInstance();
+        instance.setTestClassInstance(this);
+        instance.mockContext();
+        final InjectableLookup injectables = instance.getInjectableLookup();
     }
 }

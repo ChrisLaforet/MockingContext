@@ -10,19 +10,20 @@ import java.util.Set;
 @EqualsAndHashCode(of = "className")
 class Pending {
 
-    private final String className;
+    private final ClassComponents classComponents;
 
     private final Set<String> pendingDependencies = new HashSet<>();
 
-    public Pending(String className) {
-        this.className = className;
+    public Pending(ClassComponents classComponents) {
+        this.classComponents = classComponents;
     }
 
     public void addPendingDependency(String className) {
         this.pendingDependencies.add(className);
     }
 
-    public boolean isWaitingFor(String className) {
+    @SuppressWarnings("UnusedReturnValue")
+    public boolean checkAndCancelWaitingFor(String className) {
         if (this.pendingDependencies.contains(className)) {
             this.pendingDependencies.remove(className);
             return true;
@@ -32,6 +33,14 @@ class Pending {
 
     public boolean isPending() {
         return !this.pendingDependencies.isEmpty();
+    }
+
+    public ClassComponents getClassComponents() {
+        return this.classComponents;
+    }
+
+    public String getClassName() {
+        return this.classComponents.getClassName();
     }
 }
 
