@@ -22,11 +22,6 @@ public class MockingContextTest {
 
     /** Testing ToDo List ****
      *
-     * --annotate class with MockingContextComponent should be found
-     * -- Find a mocking class with constructor autowiring
-     * -- Create instance of mocked class with constructor autowiring
-     * -- Circle around until all mocked classes are instantiated
-     * -- Throw exception if all mocked classes cannot be instantiated
      *
      ***********/
 
