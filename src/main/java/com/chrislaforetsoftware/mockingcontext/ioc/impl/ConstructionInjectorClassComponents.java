@@ -6,13 +6,14 @@ import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectionPoint;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import lombok.EqualsAndHashCode;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@EqualsAndHashCode(of = "theClass")
 public class ConstructionInjectorClassComponents implements ClassComponents {
 
 	private final Class<?> theClass;

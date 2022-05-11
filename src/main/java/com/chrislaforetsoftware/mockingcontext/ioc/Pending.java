@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Getter
-@EqualsAndHashCode(of = "className")
+@EqualsAndHashCode(of = "classComponents")
 class Pending {
 
     private final ClassComponents classComponents;
