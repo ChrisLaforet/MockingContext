@@ -3,6 +3,8 @@
 
 package com.chrislaforetsoftware.mockingcontext.ioc;
 
+import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -10,19 +12,23 @@ import java.util.*;
 
 public class PathScanner {
 
-    public static Set<Class<?>> getAllClassesInPackage(String packageName) throws Exception {
-        final Enumeration<URL> resources = getPackageTree(packageName);
-        final List<File> directories = new ArrayList<>();
-        while (resources.hasMoreElements()) {
-            URL resource = resources.nextElement();
-            directories.add(new File(resource.getFile()));
-        }
+    public static Set<Class<?>> getAllClassesInPackage(String packageName) {
+        try {
+            final Enumeration<URL> resources = getPackageTree(packageName);
+            final List<File> directories = new ArrayList<>();
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                directories.add(new File(resource.getFile()));
+            }
 
-        final Set<Class<?>> classes = new HashSet<>();
-        for (File directory : directories) {
-            classes.addAll(findClasses(directory, packageName));
+            final Set<Class<?>> classes = new HashSet<>();
+            for (File directory : directories) {
+                classes.addAll(findClasses(directory, packageName));
+            }
+            return classes;
+        } catch (Exception ex) {
+            throw new ReflectionFailedException(ex);
         }
-        return classes;
     }
 
     private static Enumeration<URL> getPackageTree(String packageName) throws IOException {

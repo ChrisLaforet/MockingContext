@@ -28,9 +28,8 @@ public class MockingContextTest {
 
     /** Testing ToDo List ****
      *
-     * -- annotate field with MockingContextAutowired should be found
      * annotate class with MockingContextComponent should be found
-     * MockingContext createInstance throws RuntimeException
+     * --MockingContext createInstance throws RuntimeException
      *
      ***********/
 
@@ -41,20 +40,20 @@ public class MockingContextTest {
     AnnotatedClass annotatedClass;
 
     @Test
-    public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() throws Exception {
+    public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() {
         MockingContext instance = MockingContext.createInstance();
         assertEquals(MockingContextTest.class.getName(), instance.getTestClassName());
     }
 
     @Test
-    public void givenContext_whenGettingInstance_thenInstanceInsertsPackageToExplore() throws Exception {
+    public void givenContext_whenGettingInstance_thenInstanceInsertsPackageToExplore() {
         MockingContext instance = MockingContext.createInstance();
         assertFalse(instance.getPackagesToExplore().isEmpty());
         assertEquals(MockingContextTest.class.getPackage().getName(), instance.getPackagesToExplore().get(0));
     }
 
     @Test
-    public void givenContext_whenGettingInstance_thenInstanceInsertsPackageTree() throws Exception {
+    public void givenContext_whenGettingInstance_thenInstanceInsertsPackageTree() {
         MockingContext instance = MockingContext.createInstance();
         final List<String> packages = instance.getPackagesToExplore();
         assertEquals(8, packages.size());
@@ -69,7 +68,7 @@ public class MockingContextTest {
     }
 
 //    @Test
-//    public void givenContextInstance_whenAddingNewPackagePath_thenInstanceInsertsNewPackageTree() throws Exception {
+//    public void givenContextInstance_whenAddingNewPackagePath_thenInstanceInsertsNewPackageTree() {
 //        MockingContext instance = MockingContext.getInstance();
 //        instance.addPackageToExplore("java.util");
 //        final List<String> packages = instance.getPackagesToExplore();
@@ -88,7 +87,7 @@ public class MockingContextTest {
     }
 
     @Test
-    public void givenContextInstance_whenManualAddInjectable_thenInjectablesContainsManualInstance() throws Exception {
+    public void givenContextInstance_whenManualAddInjectable_thenInjectablesContainsManualInstance() {
         MockingContext instance = MockingContext.createInstance();
         final String injectable = "Hello world";
         instance.addInjectable(injectable);
@@ -101,7 +100,7 @@ public class MockingContextTest {
     }
 
     @Test
-    public void givenContextInstance_whenMockContextCalled_thenInjectablesContainMockingContextAutowiredClasses() throws Exception {
+    public void givenContextInstance_whenMockContextCalled_thenInjectablesContainMockingContextAutowiredClasses() {
         MockingContext instance = MockingContext.createInstance();
         instance.setTestClassInstance(this);
         instance.mockContext();

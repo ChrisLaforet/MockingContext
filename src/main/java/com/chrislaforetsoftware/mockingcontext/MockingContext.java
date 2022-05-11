@@ -1,18 +1,14 @@
 package com.chrislaforetsoftware.mockingcontext;
 
-import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
-import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
 import com.chrislaforetsoftware.mockingcontext.ioc.DependencyInjector;
 import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.ioc.PathScanner;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 
@@ -33,14 +29,19 @@ public class MockingContext {
 
     private MockingContext() {}
 
-    public static MockingContext createInstance() throws Exception {
-        final MockingContext instance = new MockingContext();
-        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-        if (stackTraceElements.length >= (CALLER_OFFSET + 1)) {
-            // caller is stackTraceElement[2]
-            return instance.setTestClass(Class.forName(stackTraceElements[CALLER_OFFSET].getClassName()));
+    public static MockingContext createInstance() {
+        try {
+            final MockingContext instance = new MockingContext();
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+            if (stackTraceElements.length >= (CALLER_OFFSET + 1)) {
+                // caller is stackTraceElement[2]
+                return instance.setTestClass(Class.forName(stackTraceElements[CALLER_OFFSET].getClassName()));
+            }
+            return instance;
+        } catch (Exception ex) {
+            throw new ReflectionFailedException(ex);
         }
-        return instance;
+
     }
 
     private MockingContext setTestClass(Class<?> testClass) throws Exception {
@@ -99,7 +100,7 @@ public class MockingContext {
         return this;
     }
 
-    public MockingContext mockContext() throws Exception {
+    public MockingContext mockContext() {
         DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectableLookup);
         return this;
     }

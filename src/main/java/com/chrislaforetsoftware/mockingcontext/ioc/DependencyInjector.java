@@ -4,9 +4,14 @@ import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockingContextAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
 
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 public class DependencyInjector {
 
@@ -35,12 +40,12 @@ public class DependencyInjector {
 
 	public static void discoverAndInjectDependencies(Object testClassInstance,
 													 Set<String> packagesToExplore,
-													 InjectableLookup injectableLookup) throws Exception{
+													 InjectableLookup injectableLookup) {
 		final DependencyInjector dependencyInjector = new DependencyInjector(testClassInstance, packagesToExplore, injectableLookup);
 		dependencyInjector.discoverAndInject();
 	}
 
-	public void discoverAndInject() throws Exception {
+	public void discoverAndInject() {
 		extractSourceAnnotations();
 
 		discoverInjectables();
@@ -53,7 +58,7 @@ public class DependencyInjector {
 		// TODO: inject injectables on creation of objects
 	}
 
-	private void extractSourceAnnotations() throws Exception {
+	private void extractSourceAnnotations() {
 		if (this.testClassInstance == null) {
 			return;
 		}
@@ -62,8 +67,12 @@ public class DependencyInjector {
 			for (IAnnotationScanner scanner : sourceScanners) {
 				if (scanner.isAnnotatedAsSource(field)) {
 					field.setAccessible(true);
-					injectableLookup.add(new Injectable(field.getType().getName(), field.get(this.testClassInstance)));
-					break;
+					try {
+						injectableLookup.add(new Injectable(field.getType().getName(), field.get(this.testClassInstance)));
+						break;
+					} catch (Exception ex) {
+						throw new ReflectionFailedException(ex);
+					}
 				}
 			}
 		}
@@ -74,7 +83,7 @@ public class DependencyInjector {
 		//        }
 	}
 
-	private void discoverInjectables() throws Exception {
+	private void discoverInjectables() {
 		for (String pkg : this.packagesToExplore) {
 			for (Class<?> theClass : PathScanner.getAllClassesInPackage(pkg)) {
 				discoverInjectableTargets(theClass);
