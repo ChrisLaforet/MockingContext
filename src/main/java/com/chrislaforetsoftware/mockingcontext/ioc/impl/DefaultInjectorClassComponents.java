@@ -3,9 +3,10 @@ package com.chrislaforetsoftware.mockingcontext.ioc.impl;
 import com.chrislaforetsoftware.mockingcontext.exception.ClassInstantiationFailedException;
 import com.chrislaforetsoftware.mockingcontext.exception.InjectableNotFoundException;
 import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
-import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectionPoint;
+import com.chrislaforetsoftware.mockingcontext.util.Traceable;
 import lombok.EqualsAndHashCode;
 
 import java.lang.reflect.Constructor;
@@ -13,14 +14,15 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@EqualsAndHashCode(of = "theClass")
-public class DefaultInjectorClassComponents implements ClassComponents {
+@EqualsAndHashCode(of = "theClass", callSuper = false)
+public class DefaultInjectorClassComponents extends Traceable implements ClassComponents {
 
 	private final Class<?> theClass;
 	private final Constructor<?> defaultConstructor;
 	private final List<FieldInjectionPoint> injectableFields;
 
-	public DefaultInjectorClassComponents(Class<?> theClass, Constructor<?> defaultConstructor, List<Field> dependencies) {
+	public DefaultInjectorClassComponents(Class<?> theClass, Constructor<?> defaultConstructor, List<Field> dependencies, boolean isDebugMode) {
+		super(isDebugMode);
 		this.theClass = theClass;
 		this.defaultConstructor = defaultConstructor;
 		this.injectableFields = dependencies.stream().map(FieldInjectionPoint::new).collect(Collectors.toList());
@@ -50,11 +52,13 @@ public class DefaultInjectorClassComponents implements ClassComponents {
 	@Override
 	public Injectable instantiateClassWith(InjectableLookup injectableLookup) {
 		try {
+			trace(String.format("Instantiating injectable %s with default constructor", getClassName()));
 			Object instance = defaultConstructor.newInstance();
 			for (FieldInjectionPoint field : injectableFields) {
 				field.getField().setAccessible(true);
 				Injectable injectable = injectableLookup.find(field.getField().getType().getName()).orElseThrow(() -> new InjectableNotFoundException(field.getTheClass().getName()));
 				field.getField().set(instance, injectable.getInstance());
+				trace(String.format("  Injecting field %s with instance of %s", field.getField().getName(), injectable.getInstance().getClass().getName()));
 			}
 			return new Injectable(instance.getClass().getName(), instance);
 		} catch (Exception ex) {

@@ -1,5 +1,7 @@
 package com.chrislaforetsoftware.mockingcontext.ioc;
 
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

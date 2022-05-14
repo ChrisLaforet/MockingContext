@@ -1,7 +1,8 @@
 package com.chrislaforetsoftware.mockingcontext.ioc;
 
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
+
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.List;
 
 public interface ClassComponents {

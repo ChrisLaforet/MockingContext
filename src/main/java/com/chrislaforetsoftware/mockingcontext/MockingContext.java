@@ -2,9 +2,10 @@ package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
 import com.chrislaforetsoftware.mockingcontext.ioc.DependencyInjector;
-import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.ioc.PathScanner;
+import com.chrislaforetsoftware.mockingcontext.util.Traceable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,11 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 
-public class MockingContext {
-
-    public static final int CALLER_OFFSET = 2;
-
-    private Class<?> testClass;
+public class MockingContext extends Traceable {
 
     private Object testClassInstance;
 
@@ -27,33 +24,29 @@ public class MockingContext {
 
     private final InjectableLookup injectableLookup = new InjectableLookup();
 
-    private MockingContext() {}
-
-    public static MockingContext createInstance() {
-        try {
-            final MockingContext instance = new MockingContext();
-            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-            if (stackTraceElements.length >= (CALLER_OFFSET + 1)) {
-                // caller is stackTraceElement[2]
-                return instance.setTestClass(Class.forName(stackTraceElements[CALLER_OFFSET].getClassName()));
-            }
-            return instance;
-        } catch (Exception ex) {
-            throw new ReflectionFailedException(ex);
-        }
-
+    private MockingContext(boolean isDebugMode) {
+        super(isDebugMode);
+        trace("Initialized in debug tracing mode");
     }
 
-    private MockingContext setTestClass(Class<?> testClass) throws Exception {
-        this.testClass = testClass;
-        testClassPackage = testClass.getPackage();
-        addPackageToExplore(testClassPackage);
-        return this;
+    public static MockingContext createInstance(Object testClassInstance) {
+        return createInstance(testClassInstance, false);
     }
+
+    public static MockingContext createInstance(Object testClassInstance, boolean isDebugMode) {
+        final MockingContext instance = new MockingContext(isDebugMode);
+        instance.setTestClassInstance(testClassInstance);
+        return instance;
+    }
+
 
     @SuppressWarnings("UnusedReturnValue")
     public MockingContext setTestClassInstance(Object testClassInstance) {
         this.testClassInstance = testClassInstance;
+        trace(String.format("Setting test class instance - %s", testClassInstance.getClass().getName()));
+
+        testClassPackage = testClassInstance.getClass().getPackage();
+        addPackageToExplore(testClassPackage);
         return this;
     }
 
@@ -62,7 +55,7 @@ public class MockingContext {
     }
 
     String getTestClassName() {
-        return this.testClass.getName();
+        return this.testClassInstance.getClass().getName();
     }
 
     InjectableLookup getInjectableLookup() {
@@ -84,19 +77,28 @@ public class MockingContext {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public MockingContext addPackageToExplore(String packageRoot) throws Exception {
-        packagesToExplore.addAll(PathScanner.getAllPackages(packageRoot));
-        return this;
+    public MockingContext addPackageToExplore(String packageRoot) {
+        try {
+            trace(String.format("Set package to explore - %s", packageRoot));
+            final Set<String> allPackages = PathScanner.getAllPackages(packageRoot);
+            packagesToExplore.addAll(allPackages);
+            if (isDebugMode()) {
+                allPackages.forEach(packageName -> trace(String.format("  Includes package: %s", packageName)));
+            }
+            return this;
+        } catch (Exception ex) {
+            throw new ReflectionFailedException(ex);
+        }
     }
 
-    public MockingContext addPackageToExplore(Package packageRoot) throws Exception {
+    public MockingContext addPackageToExplore(Package packageRoot) {
         if (packageRoot != null && !packageRoot.getName().isEmpty()) {
             addPackageToExplore(packageRoot.getName());
         }
         return this;
     }
 
-    public MockingContext addPackageToExplore(Class<?> theClass) throws Exception {
+    public MockingContext addPackageToExplore(Class<?> theClass) {
         if (theClass.getPackage() != null) {
             return addPackageToExplore(theClass.getPackage());
         }
@@ -105,7 +107,9 @@ public class MockingContext {
 
     @SuppressWarnings("UnusedReturnValue")
     public MockingContext mockContext() {
-        DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectableLookup);
+        trace("Mocking context started");
+        DependencyInjector.discoverAndInjectDependencies(testClassInstance, packagesToExplore, injectableLookup, isDebugMode());
+        trace("Mocking context completed");
         return this;
     }
 }

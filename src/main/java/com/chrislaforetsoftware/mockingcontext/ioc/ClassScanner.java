@@ -1,6 +1,5 @@
 package com.chrislaforetsoftware.mockingcontext.ioc;
 
-import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.mockingcontext.MockingContextAutowired;
 import com.chrislaforetsoftware.mockingcontext.annotation.mockingcontext.MockingContextComponent;
@@ -19,15 +18,15 @@ import java.util.Optional;
 
 public class ClassScanner {
 
-	public static Optional<ClassComponents> decomposeClass(Class<?> theClass) {
+	public static Optional<ClassComponents> decomposeClass(Class<?> theClass, boolean isDebugMode) {
 		try {
-			return ClassScanner.decompose(theClass);
+			return ClassScanner.decompose(theClass, isDebugMode);
 		} catch (NoSuchMethodException ex) {
 			throw new ConstructorNotFoundException(theClass.getName());
 		}
 	}
 
-	private static Optional<ClassComponents> decompose(Class<?> theClass) throws NoSuchMethodException {
+	private static Optional<ClassComponents> decompose(Class<?> theClass, boolean isDebugMode) throws NoSuchMethodException {
 
 		// determine if this class is eligible
 		if (!ClassScanner.isClassAnnotatedAsComponent(theClass)) {
@@ -66,7 +65,7 @@ public class ClassScanner {
 
 		if (onlyHasDefaultConstructor) {
 			defaultConstructor.setAccessible(true);
-			final ClassComponents components = new DefaultInjectorClassComponents(theClass, defaultConstructor, autowiredDeclaredFields);
+			final ClassComponents components = new DefaultInjectorClassComponents(theClass, defaultConstructor, autowiredDeclaredFields, isDebugMode);
 
 			return Optional.of(components);
 		}
@@ -75,7 +74,7 @@ public class ClassScanner {
 			return Optional.of(
 					new ConstructionInjectorClassComponents(theClass,
 						constructors[0],
-						Arrays.asList(constructors[0].getParameterTypes())));
+						Arrays.asList(constructors[0].getParameterTypes()), isDebugMode));
 		}
 
 		throw new InvalidComponentClassException(theClass.getName(), "Invalid number of DI constructors");

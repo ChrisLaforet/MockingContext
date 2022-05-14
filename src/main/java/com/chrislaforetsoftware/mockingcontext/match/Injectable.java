@@ -1,4 +1,4 @@
-package com.chrislaforetsoftware.mockingcontext.ioc;
+package com.chrislaforetsoftware.mockingcontext.match;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

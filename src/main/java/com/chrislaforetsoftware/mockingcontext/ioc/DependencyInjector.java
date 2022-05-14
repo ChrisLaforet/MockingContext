@@ -6,17 +6,19 @@ import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotation
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
 import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
+import com.chrislaforetsoftware.mockingcontext.match.Pending;
+import com.chrislaforetsoftware.mockingcontext.util.Traceable;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DependencyInjector {
+public class DependencyInjector extends Traceable {
 
 	private final Set<String> packagesToExplore;
 	private final Object testClassInstance;
@@ -27,7 +29,8 @@ public class DependencyInjector {
 
 	private final List<IAnnotationScanner> sourceScanners = createSourceScanners();
 
-	private DependencyInjector(Object testClassInstance, Set<String> packagesToExplore, InjectableLookup injectableLookup) {
+	private DependencyInjector(Object testClassInstance, Set<String> packagesToExplore, InjectableLookup injectableLookup, boolean isDebugMode) {
+		super(isDebugMode);
 		this.testClassInstance = testClassInstance;
 		this.packagesToExplore = packagesToExplore;
 		this.injectableLookup = injectableLookup;
@@ -43,19 +46,21 @@ public class DependencyInjector {
 
 	public static void discoverAndInjectDependencies(Object testClassInstance,
 													 Set<String> packagesToExplore,
-													 InjectableLookup injectableLookup) {
-		final DependencyInjector dependencyInjector = new DependencyInjector(testClassInstance, packagesToExplore, injectableLookup);
+													 InjectableLookup injectableLookup,
+													 boolean isDebugMode) {
+		final DependencyInjector dependencyInjector = new DependencyInjector(testClassInstance, packagesToExplore, injectableLookup, isDebugMode);
 		dependencyInjector.discoverAndInject();
 	}
 
 	public void discoverAndInject() {
-		extractSourceAnnotations();
+		findInjectablesFromSourceAnnotations();
 
 		discoverInjectables();
 		injectPendingInjectables();
 	}
 
-	private void extractSourceAnnotations() {
+	private void findInjectablesFromSourceAnnotations() {
+		trace("Find injectables from source annotations");
 		if (this.testClassInstance == null) {
 			return;
 		}
@@ -65,6 +70,7 @@ public class DependencyInjector {
 				if (scanner.isAnnotatedAsSource(field)) {
 					field.setAccessible(true);
 					try {
+						trace(String.format("  Found injectable for %s", field.getType().getName()));
 						injectableLookup.add(new Injectable(field.getType().getName(), field.get(this.testClassInstance)));
 						break;
 					} catch (Exception ex) {
@@ -95,7 +101,8 @@ public class DependencyInjector {
 
 	private void discoverInjectableTargets(Class<?> theClass) {
 		for (IAnnotationScanner scanner : sourceScanners) {
-			if (scanner.isAnnotatedAsTarget(theClass)) {
+			if (scanner.isAnnotatedAsTarget(theClass) &&
+					!isInjectableTargetInitialized(theClass)) {
 				if (attemptToInitializeInjectable(theClass)) {
 					attemptToInitializePendingInjectables();
 				}
@@ -104,8 +111,12 @@ public class DependencyInjector {
 		}
 	}
 
+	private boolean isInjectableTargetInitialized(Class<?> theClass) {
+		return injectableLookup.find(theClass).isPresent();
+	}
+
 	private boolean attemptToInitializeInjectable(Class<?> theClass) {
-		final Optional<ClassComponents> classComponents = ClassScanner.decomposeClass(theClass);
+		final Optional<ClassComponents> classComponents = ClassScanner.decomposeClass(theClass, isDebugMode());
 		if (!classComponents.isPresent()) {
 			return false;
 		}

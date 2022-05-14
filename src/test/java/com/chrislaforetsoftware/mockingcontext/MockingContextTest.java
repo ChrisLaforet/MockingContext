@@ -2,8 +2,8 @@ package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
-import com.chrislaforetsoftware.mockingcontext.ioc.Injectable;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -22,6 +22,7 @@ public class MockingContextTest {
 
     /** Testing ToDo List ****
      *
+     * Match injection by implementation of interface
      *
      ***********/
 
@@ -32,20 +33,20 @@ public class MockingContextTest {
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() {
-        MockingContext instance = MockingContext.createInstance();
+        MockingContext instance = MockingContext.createInstance(this);
         assertEquals(MockingContextTest.class.getName(), instance.getTestClassName());
     }
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceInsertsPackageToExplore() {
-        MockingContext instance = MockingContext.createInstance();
+        MockingContext instance = MockingContext.createInstance(this);
         assertFalse(instance.getPackagesToExplore().isEmpty());
         assertEquals(MockingContextTest.class.getPackage().getName(), instance.getPackagesToExplore().get(0));
     }
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceInsertsPackageTree() {
-        MockingContext instance = MockingContext.createInstance();
+        MockingContext instance = MockingContext.createInstance(this);
         final List<String> packages = instance.getPackagesToExplore();
         assertEquals(8, packages.size());
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext"));
@@ -76,8 +77,7 @@ public class MockingContextTest {
     }
 
     private MockingContext prepareFullMockingContext() {
-        MockingContext instance = MockingContext.createInstance();
-        instance.setTestClassInstance(this);
+        MockingContext instance = MockingContext.createInstance(this);
         instance.addInjectable(this.annotatedClass);
         instance.mockContext();
         return instance;
@@ -85,7 +85,7 @@ public class MockingContextTest {
 
     @Test
     public void givenContextInstance_whenManualAddInjectable_thenInjectablesContainsManualInstance() {
-        MockingContext instance = MockingContext.createInstance();
+        MockingContext instance = MockingContext.createInstance(this, true);
         final String injectable = "Hello world";
         instance.addInjectable(injectable);
 
@@ -98,7 +98,9 @@ public class MockingContextTest {
 
     @Test
     public void givenContextInstance_whenMockContextCalled_thenInjectablesContainMockingContextAutowiredClasses() {
-        MockingContext instance = prepareFullMockingContext();
+        MockingContext instance = MockingContext.createInstance(this, true);
+        instance.addInjectable(new AnnotatedClass());
+        instance.mockContext();
 
         final InjectableLookup injectables = instance.getInjectableLookup();
         Injectable match = injectables.find(AnnotatedClass.class.getName()).orElseThrow(RuntimeException::new);
@@ -126,9 +128,10 @@ public class MockingContextTest {
         assertEquals(annotatedClass, injectedClass.getAnnotatedClass());
     }
 
+    // TODO: CML - determine why this fails when not run as part of the whole test suite!!
     @Test(expected = CannotInstantiateClassException.class)
     public void givenContextInstanceWithMissingInjectables_whenMockContextCalled_thenThrowsCannotInstantiateClassException() {
-        MockingContext instance = MockingContext.createInstance();
+        MockingContext instance = MockingContext.createInstance(this);
         instance.setTestClassInstance(this);
         instance.mockContext();
         final InjectableLookup injectables = instance.getInjectableLookup();

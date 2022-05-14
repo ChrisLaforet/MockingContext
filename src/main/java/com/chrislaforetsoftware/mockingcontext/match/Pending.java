@@ -1,5 +1,6 @@
-package com.chrislaforetsoftware.mockingcontext.ioc;
+package com.chrislaforetsoftware.mockingcontext.match;
 
+import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -8,7 +9,7 @@ import java.util.Set;
 
 @Getter
 @EqualsAndHashCode(of = "classComponents")
-class Pending {
+public class Pending {
 
     private final ClassComponents classComponents;
 
