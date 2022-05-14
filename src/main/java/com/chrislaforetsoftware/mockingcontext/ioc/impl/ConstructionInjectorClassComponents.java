@@ -49,19 +49,20 @@ public class ConstructionInjectorClassComponents extends Traceable implements Cl
 	}
 
 	@Override
-	public Injectable instantiateClassWith(InjectableLookup injectableLookup) {
+	public Object instantiateClassWith(InjectableLookup injectableLookup) {
 		try {
 			trace(String.format("Instantiating injectable %s with wiring constructor", getClassName()));
 			final List<Object> constructorParameters = new ArrayList<>();
 			for (ParameterInjectionPoint parameter : parameters) {
-				Injectable injectable = injectableLookup.find(parameter.getTheClass().getName())
-											.orElseThrow(() -> new InjectableNotFoundException(parameter.getTheClass().getName()));
+				final String className = InjectableLookup.cleanClassName(parameter.getTheClass().getName());
+				Injectable injectable = injectableLookup.find(className)
+											.orElseThrow(() -> new InjectableNotFoundException(className));
 				constructorParameters.add(injectable.getInstance());
-				trace(String.format("  Injecting parameter with instance of %s", injectable.getInstance().getClass().getName()));
+				trace(String.format("  Injecting parameter with instance of %s",
+						InjectableLookup.cleanClassName(injectable.getInstance().getClass().getName())));
 			}
 
-			Object instance = constructor.newInstance(constructorParameters.toArray());
-			return new Injectable(instance.getClass().getName(), instance);
+			return constructor.newInstance(constructorParameters.toArray());
 		} catch (Exception ex) {
 			throw new ClassInstantiationFailedException(theClass.getName(), ex);
 		}

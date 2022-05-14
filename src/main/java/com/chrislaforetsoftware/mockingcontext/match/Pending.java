@@ -4,8 +4,11 @@ import com.chrislaforetsoftware.mockingcontext.ioc.ClassComponents;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @EqualsAndHashCode(of = "classComponents")
@@ -34,6 +37,10 @@ public class Pending {
 
     public boolean isPending() {
         return !this.pendingDependencies.isEmpty();
+    }
+
+    public List<String> getPendingDependencies() {
+        return new ArrayList<>(pendingDependencies);
     }
 
     public ClassComponents getClassComponents() {

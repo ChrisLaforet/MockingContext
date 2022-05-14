@@ -50,17 +50,20 @@ public class DefaultInjectorClassComponents extends Traceable implements ClassCo
 	}
 
 	@Override
-	public Injectable instantiateClassWith(InjectableLookup injectableLookup) {
+	public Object instantiateClassWith(InjectableLookup injectableLookup) {
 		try {
 			trace(String.format("Instantiating injectable %s with default constructor", getClassName()));
 			Object instance = defaultConstructor.newInstance();
 			for (FieldInjectionPoint field : injectableFields) {
+				final String fieldName = InjectableLookup.cleanClassName(field.getField().getType().getName());
 				field.getField().setAccessible(true);
-				Injectable injectable = injectableLookup.find(field.getField().getType().getName()).orElseThrow(() -> new InjectableNotFoundException(field.getTheClass().getName()));
+				Injectable injectable = injectableLookup.find(fieldName).orElseThrow(() -> new InjectableNotFoundException(fieldName));
 				field.getField().set(instance, injectable.getInstance());
-				trace(String.format("  Injecting field %s with instance of %s", field.getField().getName(), injectable.getInstance().getClass().getName()));
+				trace(String.format("  Injecting field %s with instance of %s",
+						fieldName,
+						InjectableLookup.cleanClassName(injectable.getInstance().getClass().getName())));
 			}
-			return new Injectable(instance.getClass().getName(), instance);
+			return instance;
 		} catch (Exception ex) {
 			throw new ClassInstantiationFailedException(theClass.getName(), ex);
 		}

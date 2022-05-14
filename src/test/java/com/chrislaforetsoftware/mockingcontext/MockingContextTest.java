@@ -22,7 +22,8 @@ public class MockingContextTest {
 
     /** Testing ToDo List ****
      *
-     * Match injection by implementation of interface
+     * --Match injection by implementation of interface
+     * Match injection by extension of class tree
      *
      ***********/
 
@@ -48,7 +49,7 @@ public class MockingContextTest {
     public void givenContext_whenGettingInstance_thenInstanceInsertsPackageTree() {
         MockingContext instance = MockingContext.createInstance(this);
         final List<String> packages = instance.getPackagesToExplore();
-        assertEquals(8, packages.size());
+        assertEquals(9, packages.size());
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext"));
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.match"));
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.annotation"));
@@ -57,6 +58,7 @@ public class MockingContextTest {
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.ioc"));
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.exception"));
         assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.ioc.impl"));
+        assertTrue(packages.contains("com.chrislaforetsoftware.mockingcontext.util"));
     }
 
 //    @Test
@@ -77,7 +79,7 @@ public class MockingContextTest {
     }
 
     private MockingContext prepareFullMockingContext() {
-        MockingContext instance = MockingContext.createInstance(this);
+        MockingContext instance = MockingContext.createInstance(this, true);
         instance.addInjectable(this.annotatedClass);
         instance.mockContext();
         return instance;
@@ -135,5 +137,24 @@ public class MockingContextTest {
         instance.setTestClassInstance(this);
         instance.mockContext();
         final InjectableLookup injectables = instance.getInjectableLookup();
+    }
+
+    @Test
+    public void givenContextInstanceWithInterface_whenMockContextCalled_thenInterfaceIsInjectedWithConcreteImplementer() {
+        MockingContext instance = MockingContext.createInstance(this, true);
+        instance.addInjectable(this.annotatedClass);
+        instance.mockContext();
+
+        final InjectableLookup injectables = instance.getInjectableLookup();
+        Optional<Injectable> injectableClassMatch = injectables.find(InjectableClass.class.getName());
+        assertTrue(injectableClassMatch.isPresent());
+        final InjectableClass injectedClass = (InjectableClass)injectableClassMatch.get().getInstance();
+
+        Optional<Injectable> injectableTargetMatch = injectables.find(InjectableTarget.class.getName());
+        assertTrue(injectableTargetMatch.isPresent());
+        final InjectableTarget injectableTarget = (InjectableTarget)injectableTargetMatch.get().getInstance();
+
+
+        assertEquals(injectableTarget.injectableClass, injectedClass);
     }
 }

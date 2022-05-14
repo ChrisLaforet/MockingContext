@@ -6,15 +6,18 @@ import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotation
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
 import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
-import com.chrislaforetsoftware.mockingcontext.match.Injectable;
 import com.chrislaforetsoftware.mockingcontext.match.Pending;
 import com.chrislaforetsoftware.mockingcontext.util.Traceable;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ public class DependencyInjector extends Traceable {
 	private final Object testClassInstance;
 
 	private final InjectableLookup injectableLookup;
+	private final ClassResolver classResolver;
 
 	private final Set<Pending> pendingInjectables = new HashSet<>();
 
@@ -31,6 +35,7 @@ public class DependencyInjector extends Traceable {
 
 	private DependencyInjector(Object testClassInstance, Set<String> packagesToExplore, InjectableLookup injectableLookup, boolean isDebugMode) {
 		super(isDebugMode);
+		this.classResolver = new ClassResolver(packagesToExplore, isDebugMode);
 		this.testClassInstance = testClassInstance;
 		this.packagesToExplore = packagesToExplore;
 		this.injectableLookup = injectableLookup;
@@ -53,14 +58,14 @@ public class DependencyInjector extends Traceable {
 	}
 
 	public void discoverAndInject() {
-		findInjectablesFromSourceAnnotations();
-
-		discoverInjectables();
+		discoverInjectablesInTestInstance();
+		discoverOtherInjectables();
+		reconcileUntrackedInjectables();
 		injectPendingInjectables();
 	}
 
-	private void findInjectablesFromSourceAnnotations() {
-		trace("Find injectables from source annotations");
+	private void discoverInjectablesInTestInstance() {
+		trace("Find injectables in test class instance");
 		if (this.testClassInstance == null) {
 			return;
 		}
@@ -70,8 +75,8 @@ public class DependencyInjector extends Traceable {
 				if (scanner.isAnnotatedAsSource(field)) {
 					field.setAccessible(true);
 					try {
-						trace(String.format("  Found injectable for %s", field.getType().getName()));
-						injectableLookup.add(new Injectable(field.getType().getName(), field.get(this.testClassInstance)));
+						trace(String.format("  Found injectable for %s", InjectableLookup.cleanClassName(field.getType().getName())));
+						injectableLookup.addInjectablesFor(field.get(this.testClassInstance));
 						break;
 					} catch (Exception ex) {
 						throw new ReflectionFailedException(ex);
@@ -81,11 +86,36 @@ public class DependencyInjector extends Traceable {
 		}
 	}
 
-	private void discoverInjectables() {
+	private void discoverOtherInjectables() {
 		for (String pkg : this.packagesToExplore) {
 			for (Class<?> theClass : PathScanner.getAllClassesInPackage(pkg)) {
 				discoverInjectableTargets(theClass);
 			}
+		}
+	}
+
+	private void reconcileUntrackedInjectables() {
+		final Map<String, String> pendingLookup = new HashMap<>();
+		pendingInjectables.forEach(pending -> pendingLookup.put(pending.getClassName(), ""));
+		injectableLookup.getInjectableClasses().forEach(injectable -> pendingLookup.put(injectable, ""));
+
+		final Queue<String> dependencies = new LinkedList<>(pendingInjectables.stream().map(Pending::getPendingDependencies).flatMap(List::stream).collect(Collectors.toSet()));
+		while (!dependencies.isEmpty()) {
+			final String className = dependencies.remove();
+			if (pendingLookup.containsKey(className)) {
+				continue;
+			}
+			attemptToInitializeInjectable(getClassFromName(className));
+
+			pendingLookup.put(className, "");
+		}
+	}
+
+	private Class<?> getClassFromName(String className) {
+		try {
+			return Class.forName(className);
+		} catch (Exception ex) {
+			throw new ReflectionFailedException(ex);
 		}
 	}
 
@@ -101,18 +131,20 @@ public class DependencyInjector extends Traceable {
 
 	private void discoverInjectableTargets(Class<?> theClass) {
 		for (IAnnotationScanner scanner : sourceScanners) {
-			if (scanner.isAnnotatedAsTarget(theClass) &&
-					!isInjectableTargetInitialized(theClass)) {
-				if (attemptToInitializeInjectable(theClass)) {
-					attemptToInitializePendingInjectables();
+			if (scanner.isAnnotatedAsTarget(theClass)) {
+				classResolver.add(theClass);
+				if (!isInjectableTargetInitialized(theClass)) {
+					if (attemptToInitializeInjectable(theClass)) {
+						attemptToInitializePendingInjectables();
+					}
+					break;
 				}
-				break;
 			}
 		}
 	}
 
 	private boolean isInjectableTargetInitialized(Class<?> theClass) {
-		return injectableLookup.find(theClass).isPresent();
+		return injectableLookup.find(InjectableLookup.cleanClassName(theClass.getName())).isPresent();
 	}
 
 	private boolean attemptToInitializeInjectable(Class<?> theClass) {
@@ -138,21 +170,21 @@ public class DependencyInjector extends Traceable {
 
 	private boolean createInjectedInstance(ClassComponents classComponents) {
 		for (Class<?> neededClass: classComponents.getClasses()) {
-			if (!injectableLookup.find(neededClass.getName()).isPresent()) {
+			if (!injectableLookup.find(InjectableLookup.cleanClassName(neededClass.getName())).isPresent()) {
 				return false;
 			}
 		}
-		injectableLookup.add(classComponents.instantiateClassWith(injectableLookup));
+		injectableLookup.addInjectablesFor(classComponents.instantiateClassWith(injectableLookup));
 
 		this.pendingInjectables.forEach(pending ->
-				pending.checkAndCancelWaitingFor(classComponents.getClass().getName()));
+				pending.checkAndCancelWaitingFor(InjectableLookup.cleanClassName(classComponents.getClass().getName())));
 		return true;
 	}
 
 	private void trackPendingInjectable(ClassComponents classComponents) {
 		Pending pending = new Pending(classComponents);
 		for (Class<?> neededClass: classComponents.getClasses()) {
-			pending.addPendingDependency(neededClass.getName());
+			pending.addPendingDependency(InjectableLookup.cleanClassName(neededClass.getName()));
 		}
 		this.pendingInjectables.add(pending);
 	}

@@ -22,11 +22,12 @@ public class MockingContext extends Traceable {
     @SuppressWarnings("FieldCanBeLocal")
     private Package testClassPackage;
 
-    private final InjectableLookup injectableLookup = new InjectableLookup();
+    private final InjectableLookup injectableLookup;
 
     private MockingContext(boolean isDebugMode) {
         super(isDebugMode);
         trace("Initialized in debug tracing mode");
+        injectableLookup = new InjectableLookup(packagesToExplore, isDebugMode);
     }
 
     public static MockingContext createInstance(Object testClassInstance) {
@@ -38,7 +39,6 @@ public class MockingContext extends Traceable {
         instance.setTestClassInstance(testClassInstance);
         return instance;
     }
-
 
     @SuppressWarnings("UnusedReturnValue")
     public MockingContext setTestClassInstance(Object testClassInstance) {
@@ -63,17 +63,18 @@ public class MockingContext extends Traceable {
     }
 
     public MockingContext addInjectable(Class<?> theClassToMatch, Object instance) {
-        return addInjectable(theClassToMatch.getName(), instance);
+        return this.addInjectable(theClassToMatch.getName(), instance);
     }
 
     public MockingContext addInjectable(String className, Object instance) {
-        injectableLookup.add(new Injectable(className, instance));
+        injectableLookup.addInjectablesFor(className, instance);
         return this;
     }
 
     @SuppressWarnings("UnusedReturnValue")
     public MockingContext addInjectable(Object instance) {
-        return addInjectable(instance.getClass(), instance);
+        injectableLookup.addInjectablesFor(instance);
+        return this;
     }
 
     @SuppressWarnings("UnusedReturnValue")
