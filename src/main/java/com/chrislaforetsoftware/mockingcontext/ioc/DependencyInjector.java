@@ -5,7 +5,9 @@ import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockingContextAnn
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.MockitoAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.annotation.impl.SpringAnnotationScanner;
 import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
+import com.chrislaforetsoftware.mockingcontext.exception.InjectableNotFoundException;
 import com.chrislaforetsoftware.mockingcontext.exception.ReflectionFailedException;
+import com.chrislaforetsoftware.mockingcontext.match.Injectable;
 import com.chrislaforetsoftware.mockingcontext.match.Pending;
 import com.chrislaforetsoftware.mockingcontext.util.Traceable;
 
@@ -25,6 +27,7 @@ public class DependencyInjector extends Traceable {
 
 	private final Set<String> packagesToExplore;
 	private final Object testClassInstance;
+	private final List<Field> testClassFields = new ArrayList<>();
 
 	private final InjectableLookup injectableLookup;
 	private final ClassResolver classResolver;
@@ -62,6 +65,7 @@ public class DependencyInjector extends Traceable {
 		discoverOtherInjectables();
 		reconcileUntrackedInjectables();
 		injectPendingInjectables();
+		injectInjectablesIntoTestInstance();
 	}
 
 	private void discoverInjectablesInTestInstance() {
@@ -75,8 +79,15 @@ public class DependencyInjector extends Traceable {
 				if (scanner.isAnnotatedAsSource(field)) {
 					field.setAccessible(true);
 					try {
-						trace(String.format("  Found injectable for %s", InjectableLookup.cleanClassName(field.getType().getName())));
-						injectableLookup.addInjectablesFor(field.get(this.testClassInstance));
+						final Object value = field.get(this.testClassInstance);
+						if (value != null) {
+							trace(String.format("  Found injectable for %s", InjectableLookup.cleanClassName(field.getType().getName())));
+							injectableLookup.addInjectablesFor(value);
+						} else {
+							trace(String.format("  Found injection target for %s", InjectableLookup.cleanClassName(field.getType().getName())));
+							discoverInjectableTargets(field.getType());
+							testClassFields.add(field);
+						}
 						break;
 					} catch (Exception ex) {
 						throw new ReflectionFailedException(ex);
@@ -139,6 +150,30 @@ public class DependencyInjector extends Traceable {
 			attemptToInitializePendingInjectables();
 			if (pendingInjectables.size() == remaining) {
 				throw new CannotInstantiateClassException(pendingInjectables.stream().map(Pending::getClassName).collect(Collectors.joining(", ")));
+			}
+		}
+
+	}
+
+	private void injectInjectablesIntoTestInstance() {
+		if (testClassFields.isEmpty()) {
+			return;
+		}
+
+		trace("Instantiating test class with injectables");
+		for (Field field : testClassFields) {
+			final String className = InjectableLookup.cleanClassName(field.getType().getName());
+			Optional<Injectable> injectable = injectableLookup.find(className);
+			if (injectable.isPresent()) {
+				try {
+					field.set(testClassInstance, injectable.get().getInstance());
+					trace(String.format("  Injecting field %s with instance of %s", field.getName(), className));
+				} catch (Exception ex) {
+					throw new ReflectionFailedException(ex);
+				}
+			} else {
+				trace(String.format("  Cannot find injectable object for field %s", field.getName()));
+				throw new InjectableNotFoundException(className);
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package com.chrislaforetsoftware.mockingcontext;
 
 import com.chrislaforetsoftware.mockingcontext.annotation.IAnnotationScanner;
+import com.chrislaforetsoftware.mockingcontext.annotation.mockingcontext.MockingContextAutowired;
 import com.chrislaforetsoftware.mockingcontext.exception.CannotInstantiateClassException;
 import com.chrislaforetsoftware.mockingcontext.ioc.InjectableLookup;
 import com.chrislaforetsoftware.mockingcontext.match.Injectable;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -30,6 +32,9 @@ public class MockingContextTest {
     IAnnotationScanner mockScanner;
 
     AnnotatedClass annotatedClass = new AnnotatedClass();
+
+    @MockingContextAutowired
+    IInjectableClass testInjectable;
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() {
@@ -172,5 +177,14 @@ public class MockingContextTest {
         final ExtendedTarget extendedTarget = (ExtendedTarget)injectableTargetMatch.get().getInstance();
 
         assertEquals(extendedTarget.injectableClass, extendingClass);
+    }
+
+    @Test
+    public void givenTestWithAnnotatedInjectable_whenMockContextCalled_thenInjectableIsFulfilled() {
+        MockingContext instance = MockingContext.createInstance(this, true);
+        instance.addInjectable(this.annotatedClass);
+        instance.mockContext();
+
+        assertNotNull(testInjectable);
     }
 }
