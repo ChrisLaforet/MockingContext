@@ -2,6 +2,7 @@ package com.chrislaforetsoftware.mockingcontext.ioc;
 
 import com.chrislaforetsoftware.mockingcontext.util.Traceable;
 
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +20,9 @@ public class ClassResolver extends Traceable {
 	}
 
 	public void add(Class<?> theClass) {
+		if (Modifier.isAbstract(theClass.getModifiers())) {
+			return;
+		}
 		final String instanceName = InjectableLookup.cleanClassName(theClass.getName());
 		trace(String.format("    Registering class resolver for %s", instanceName));
 		aliasLookup.put(instanceName, theClass);
@@ -33,7 +37,12 @@ public class ClassResolver extends Traceable {
 			aliasLookup.put(interfaceName, theClass);
 		}
 
-		// TODO: determine superclasses
+		final Class<?> superClass = theClass.getSuperclass();
+		if (isClassInExplorablePackages(superClass)) {
+			final String superClassName = InjectableLookup.cleanClassName(superClass.getName());
+			trace(String.format("    Registering class resolver superclass %s", superClassName));
+			aliasLookup.put(superClassName, theClass);
+		}
 	}
 
 	public Optional<Class<?>> resolve(String className) {

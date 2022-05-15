@@ -82,9 +82,13 @@ public class MockingContext extends Traceable {
         try {
             trace(String.format("Set package to explore - %s", packageRoot));
             final Set<String> allPackages = PathScanner.getAllPackages(packageRoot);
-            packagesToExplore.addAll(allPackages);
-            if (isDebugMode()) {
-                allPackages.forEach(packageName -> trace(String.format("  Includes package: %s", packageName)));
+            if (allPackages.isEmpty()) {
+                packagesToExplore.add(packageRoot);
+            } else {
+                packagesToExplore.addAll(allPackages);
+                if (isDebugMode()) {
+                    allPackages.forEach(packageName -> trace(String.format("  Includes package: %s", packageName)));
+                }
             }
             return this;
         } catch (Exception ex) {

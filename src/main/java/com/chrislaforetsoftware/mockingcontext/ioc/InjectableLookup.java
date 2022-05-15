@@ -51,6 +51,12 @@ public class InjectableLookup extends Traceable {
 		}
 
 		// find all extended super classes this instance fulfills
+		final Class<?> superClass = instance.getClass().getSuperclass();
+		if (isClassInExplorablePackages(superClass)) {
+			final String superClassName = cleanClassName(superClass.getName());
+			trace(String.format("    Registering superclass extending %s", superClassName));
+			add(superClassName, instance);
+		}
 	}
 
 	public static String cleanClassName(String className) {

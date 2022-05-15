@@ -99,15 +99,29 @@ public class DependencyInjector extends Traceable {
 		pendingInjectables.forEach(pending -> pendingLookup.put(pending.getClassName(), ""));
 		injectableLookup.getInjectableClasses().forEach(injectable -> pendingLookup.put(injectable, ""));
 
-		final Queue<String> dependencies = new LinkedList<>(pendingInjectables.stream().map(Pending::getPendingDependencies).flatMap(List::stream).collect(Collectors.toSet()));
+		final Queue<String> dependencies = new LinkedList<>(pendingInjectables.stream()
+													.map(Pending::getPendingDependencies)
+													.flatMap(List::stream)
+													.collect(Collectors.toSet()));
 		while (!dependencies.isEmpty()) {
 			final String className = dependencies.remove();
 			if (pendingLookup.containsKey(className)) {
 				continue;
 			}
-			attemptToInitializeInjectable(getClassFromName(className));
-
-			pendingLookup.put(className, "");
+			if (attemptToInitializeInjectable(getClassFromName(className))) {
+				pendingLookup.put(className, "");
+			} else {
+				pendingInjectables.stream()
+						.filter(pending -> pending.getClassName().equals(className)).findFirst()
+						.ifPresent(pending -> {
+							for (String pendingClassName : pending.getPendingDependencies()) {
+								if (!pendingLookup.containsKey(pendingClassName)) {
+									pendingLookup.put(pendingClassName, "");
+									dependencies.add(pendingClassName);
+								}
+							}
+						});
+			}
 		}
 	}
 
@@ -161,7 +175,7 @@ public class DependencyInjector extends Traceable {
 	}
 
 	private void attemptToInitializePendingInjectables() {
-		pendingInjectables.removeIf(pending -> !pending.isPending() && attemptToInitializePendingInjectable(pending));
+		pendingInjectables.removeIf(pending -> !pending.isPending() || attemptToInitializePendingInjectable(pending));
 	}
 
 	private boolean attemptToInitializePendingInjectable(Pending pending) {
