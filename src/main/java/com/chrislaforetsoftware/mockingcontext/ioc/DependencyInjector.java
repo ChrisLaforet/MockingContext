@@ -85,10 +85,9 @@ public class DependencyInjector extends Traceable {
 							injectableLookup.addInjectablesFor(value);
 						} else {
 							trace(String.format("  Found injection target for %s", InjectableLookup.cleanClassName(field.getType().getName())));
-							discoverInjectableTargets(field.getType());
+							attemptToInitializeInjectable(field.getType());
 							testClassFields.add(field);
 						}
-						break;
 					} catch (Exception ex) {
 						throw new ReflectionFailedException(ex);
 					}
@@ -152,7 +151,6 @@ public class DependencyInjector extends Traceable {
 				throw new CannotInstantiateClassException(pendingInjectables.stream().map(Pending::getClassName).collect(Collectors.joining(", ")));
 			}
 		}
-
 	}
 
 	private void injectInjectablesIntoTestInstance() {
@@ -199,6 +197,7 @@ public class DependencyInjector extends Traceable {
 	private boolean attemptToInitializeInjectable(Class<?> theClass) {
 		final Optional<ClassComponents> classComponents = ClassScanner.decomposeClass(theClass, isDebugMode());
 		if (!classComponents.isPresent()) {
+			trace(String.format("    !! Not possible to decompose class %s", InjectableLookup.cleanClassName(theClass.getName())));
 			return false;
 		}
 

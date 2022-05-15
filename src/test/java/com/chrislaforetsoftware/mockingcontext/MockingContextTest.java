@@ -36,6 +36,9 @@ public class MockingContextTest {
     @MockingContextAutowired
     IInjectableClass testInjectable;
 
+    @MockingContextAutowired
+    DisconnectedClass disconnectedClass;
+
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() {
         MockingContext instance = MockingContext.createInstance(this);
@@ -180,11 +183,20 @@ public class MockingContextTest {
     }
 
     @Test
-    public void givenTestWithAnnotatedInjectable_whenMockContextCalled_thenInjectableIsFulfilled() {
+    public void givenTestWithAnnotatedInjectableInterface_whenMockContextCalled_thenInjectableIsFulfilled() {
         MockingContext instance = MockingContext.createInstance(this, true);
         instance.addInjectable(this.annotatedClass);
         instance.mockContext();
 
         assertNotNull(testInjectable);
+    }
+
+    @Test
+    public void givenTestWithAnnotatedInjectableClass_whenMockContextCalled_thenInjectableIsFulfilled() {
+        MockingContext instance = MockingContext.createInstance(this, true);
+        instance.addInjectable(this.annotatedClass);
+        instance.mockContext();
+
+        assertNotNull(disconnectedClass);
     }
 }
