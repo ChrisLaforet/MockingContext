@@ -47,7 +47,7 @@ public class ClassScanner {
 		// find @Autowired class dependencies
 
 		// do we have autowired fields in this class?
-		final Field [] fields = theClass.getFields();
+		final Field [] fields = theClass.getDeclaredFields();
 		final List<Field> autowiredDeclaredFields = loadAutowiredFields(fields);
 
 		final Constructor<?> defaultConstructor = getDefaultConstructorFor(theClass);

@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +39,12 @@ public class MockingContextTest {
 
     @MockingContextAutowired
     DisconnectedClass disconnectedClass;
+
+    @MockingContextAutowired
+    IHandler<String, BigDecimal> stringBigDecimalIHandler;
+
+    @MockingContextAutowired
+    HandlerClassDependent dependentClass;
 
     @Test
     public void givenContext_whenGettingInstance_thenInstanceKnowsTestClass() {
@@ -199,4 +206,24 @@ public class MockingContextTest {
 
         assertNotNull(disconnectedClass);
     }
+
+    @Test
+    public void givenTestWithAnnotatedInjectableGenericInterface_whenMockContextCalled_thenInjectableIsFulfilled() {
+        MockingContext instance = MockingContext.createInstance(this, true);
+        instance.addInjectable(this.annotatedClass);
+        instance.mockContext();
+
+        assertNotNull(stringBigDecimalIHandler);
+    }
+
+    @Test
+    public void givenTestWithAnnotatedGenericInterfaceDependentClass_whenMockContextCalled_thenInjectableIsFulfilled() {
+        MockingContext instance = MockingContext.createInstance(this, true);
+        instance.addInjectable(this.annotatedClass);
+        instance.mockContext();
+
+        assertNotNull(dependentClass);
+        assertEquals(stringBigDecimalIHandler, dependentClass.stringBigDecimalIHandler);
+    }
+
 }
