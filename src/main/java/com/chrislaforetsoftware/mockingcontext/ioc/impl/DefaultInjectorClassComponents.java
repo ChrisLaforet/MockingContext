@@ -65,6 +65,7 @@ public class DefaultInjectorClassComponents extends Traceable implements ClassCo
 			}
 			return instance;
 		} catch (Exception ex) {
+			trace(String.format("Caught exception while instantiating injectable: %s", ex));
 			throw new ClassInstantiationFailedException(theClass.getName(), ex);
 		}
 	}

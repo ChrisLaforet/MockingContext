@@ -195,6 +195,8 @@ public class DependencyInjector extends Traceable {
 	}
 
 	private boolean attemptToInitializeInjectable(Class<?> theClass) {
+
+// TODO: if we have an interface, locate an implementing class	???
 		final Optional<ClassComponents> classComponents = ClassScanner.decomposeClass(theClass, isDebugMode());
 		if (!classComponents.isPresent()) {
 			trace(String.format("    !! Not possible to decompose class %s", InjectableLookup.cleanClassName(theClass.getName())));
@@ -213,12 +215,15 @@ public class DependencyInjector extends Traceable {
 	}
 
 	private boolean attemptToInitializePendingInjectable(Pending pending) {
+		trace(String.format("Attempting to initialize pending injectable: %s", pending.getClassName()));
 		return createInjectedInstance(pending.getClassComponents());
 	}
 
 	private boolean createInjectedInstance(ClassComponents classComponents) {
 		for (Class<?> neededClass: classComponents.getClasses()) {
-			if (!injectableLookup.find(InjectableLookup.cleanClassName(neededClass.getName())).isPresent()) {
+			final String cleanClassName = InjectableLookup.cleanClassName(neededClass.getName());
+			if (!injectableLookup.find(cleanClassName).isPresent()) {
+				trace(String.format("Cannot find injectable %s needed by class %s", cleanClassName, classComponents.getClassName()));
 				return false;
 			}
 		}

@@ -64,6 +64,7 @@ public class ConstructionInjectorClassComponents extends Traceable implements Cl
 
 			return constructor.newInstance(constructorParameters.toArray());
 		} catch (Exception ex) {
+			trace(String.format("Caught exception while instantiating injectable: %s", ex));
 			throw new ClassInstantiationFailedException(theClass.getName(), ex);
 		}
 	}
